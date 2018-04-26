@@ -7,6 +7,7 @@ buildscript {
         }
     }
     repositories {
+        mavenLocal()
         jcenter()
         maven { url "https://kotlin.bintray.com/kotlinx" }
         maven { url "https://kotlin.bintray.com/kotlin-dev" }
@@ -36,6 +37,12 @@ buildscript {
 }
 
 allprojects {
+    project.gradle.services.get(org.gradle.api.internal.FeaturePreviews.class).enableFeature(org.gradle.api.internal.FeaturePreviews.Feature.GRADLE_METADATA)
+
+    repositories {
+        mavenLocal()
+    }
+
     def deployVersion = properties['DeployVersion']
     if (deployVersion != null) version = deployVersion
     if (useKotlinSnapshot) {
