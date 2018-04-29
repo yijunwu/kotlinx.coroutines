@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package kotlinx.coroutines.experimental.internal
+package kotlinx.coroutines.experimental
 
-/**
- * Closeable entity.
- * @suppress **Deprecated**
- */
-@Deprecated("No replacement, see specific use")
-public actual interface Closeable {
-    public actual fun close()
+import kotlin.coroutines.experimental.*
+
+internal actual fun handleCoroutineExceptionImpl(context: CoroutineContext, exception: Throwable) {
+    // log exception
+    println(exception)
 }

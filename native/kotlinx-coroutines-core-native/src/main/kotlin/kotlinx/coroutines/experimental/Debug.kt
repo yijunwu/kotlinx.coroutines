@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package kotlinx.coroutines.experimental.internal
+package kotlinx.coroutines.experimental
 
-/**
- * Closeable entity.
- * @suppress **Deprecated**
- */
-@Deprecated("No replacement, see specific use")
-public actual interface Closeable {
-    public actual fun close()
-}
+private var counter = 0
+
+internal actual val Any.hexAddress: String
+    get() {
+        return "<unknown>" // :todo:
+    }
+
+internal actual val Any.classSimpleName: String get() = this::class.simpleName ?: "Unknown"

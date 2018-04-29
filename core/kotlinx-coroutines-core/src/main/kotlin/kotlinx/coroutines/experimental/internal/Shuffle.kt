@@ -16,11 +16,5 @@
 
 package kotlinx.coroutines.experimental.internal
 
-/**
- * Closeable entity.
- * @suppress **Deprecated**
- */
-@Deprecated("No replacement, see specific use")
-public actual interface Closeable {
-    public actual fun close()
-}
+@Suppress("NOTHING_TO_INLINE")
+internal actual inline fun <T> MutableList<T>.shuffleImpl() = shuffle()

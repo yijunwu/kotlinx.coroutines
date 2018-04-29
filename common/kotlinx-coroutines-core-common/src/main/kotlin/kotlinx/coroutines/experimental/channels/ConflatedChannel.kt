@@ -55,6 +55,7 @@ public open class ConflatedChannel<E> : AbstractChannel<E>() {
                     when (sendResult) {
                         null -> return OFFER_SUCCESS
                         is Closed<*> -> return sendResult
+                        else -> Unit // todo:KLUDGE: works around native BE bug
                     }
                     // otherwise there was receiver in queue, retry super.offerInternal
                 }
