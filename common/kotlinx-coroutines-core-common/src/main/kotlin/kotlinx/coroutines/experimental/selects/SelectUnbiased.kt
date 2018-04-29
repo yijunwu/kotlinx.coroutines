@@ -16,6 +16,7 @@
 
 package kotlinx.coroutines.experimental.selects
 
+import kotlinx.coroutines.experimental.internal.*
 import kotlinx.coroutines.experimental.timeunit.*
 import kotlin.coroutines.experimental.*
 import kotlin.coroutines.experimental.intrinsics.*
@@ -55,7 +56,7 @@ internal class UnbiasedSelectBuilderImpl<in R>(cont: Continuation<R>) :
     internal fun initSelectResult(): Any? {
         if (!instance.isSelected) {
             try {
-                clauses.shuffle()
+                clauses.shuffleImpl()
                 clauses.forEach { it.invoke() }
             } catch (e: Throwable) {
                 instance.handleBuilderException(e)

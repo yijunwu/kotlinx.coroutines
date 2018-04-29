@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package kotlinx.coroutines.experimental.internal
+package kotlinx.coroutines.experimental
 
 /**
- * Closeable entity.
- * @suppress **Deprecated**
+ * A runnable task for [CoroutineDispatcher.dispatch].
  */
-@Deprecated("No replacement, see specific use")
-public actual interface Closeable {
-    public actual fun close()
+public actual interface Runnable {
+    public actual fun run()
 }
+
+@Suppress("FunctionName")
+public actual inline fun Runnable(crossinline block: () -> Unit): Runnable =
+    object : Runnable {
+        override fun run() {
+            block()
+        }
+    }

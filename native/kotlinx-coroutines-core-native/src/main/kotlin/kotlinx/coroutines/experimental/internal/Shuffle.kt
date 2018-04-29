@@ -16,11 +16,14 @@
 
 package kotlinx.coroutines.experimental.internal
 
-/**
- * Closeable entity.
- * @suppress **Deprecated**
- */
-@Deprecated("No replacement, see specific use")
-public actual interface Closeable {
-    public actual fun close()
+import platform.posix.*
+
+internal actual fun <T> MutableList<T>.shuffleImpl() {
+    val n = size
+    for (i in 0..n - 2) {
+        val j = i + (random() % (n - i)).toInt()
+        val t = get(i)
+        set(i, get(j))
+        set(j, t)
+    }
 }

@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package kotlinx.coroutines.experimental.internal
+package kotlinx.coroutines.experimental.internalAnnotations
 
-/**
- * Closeable entity.
- * @suppress **Deprecated**
- */
-@Deprecated("No replacement, see specific use")
-public actual interface Closeable {
-    public actual fun close()
-}
+@Target(AnnotationTarget.FILE)
+internal actual annotation class JvmName(actual val name: String)
+
+@Target(AnnotationTarget.FILE)
+internal actual annotation class JvmMultifileClass
+
+internal actual annotation class JvmField
+
+internal actual annotation class Volatile
