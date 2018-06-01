@@ -45,7 +45,7 @@ open class CompletedExceptionally(
  * @param cause the exceptional completion cause. If `cause` is null, then a [JobCancellationException] is created.
  * @suppress **This is unstable API and it is subject to change.**
  */
-internal class Cancelled(
+internal class CancelledJob(
     job: Job,
     cause: Throwable?
 ) : CompletedExceptionally(cause ?: JobCancellationException("Job was cancelled normally", null, job))
