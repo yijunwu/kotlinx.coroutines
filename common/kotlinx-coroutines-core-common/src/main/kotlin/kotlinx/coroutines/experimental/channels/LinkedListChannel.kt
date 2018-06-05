@@ -17,6 +17,7 @@
 package kotlinx.coroutines.experimental.channels
 
 import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.internalAnnotations.*
 import kotlinx.coroutines.experimental.selects.*
 
 /**
@@ -26,8 +27,18 @@ import kotlinx.coroutines.experimental.selects.*
  * This channel is created by `Channel(Channel.UNLIMITED)` factory function invocation.
  *
  * This implementation is fully lock-free.
+ *
+ * @param job Optional job that is bound to this channel's lifecycle. See [SendChannel.job].
  */
-public open class LinkedListChannel<E>(job: Job = Job()) : AbstractChannel<E>(job) {
+// Note: JvmOverloads ensures binary compatibility with job-less version of this constructor
+public open class LinkedListChannel<E> @JvmOverloads public constructor(
+    job: Job = ChannelJobImpl()
+) : AbstractChannel<E>(job) {
+    init {
+        // todo: this class is OPEN. What if derived class passes custom job that is cancelled during construction?
+        initChannelJob()
+    }
+    
     protected final override val isBufferAlwaysEmpty: Boolean get() = true
     protected final override val isBufferEmpty: Boolean get() = true
     protected final override val isBufferAlwaysFull: Boolean get() = false

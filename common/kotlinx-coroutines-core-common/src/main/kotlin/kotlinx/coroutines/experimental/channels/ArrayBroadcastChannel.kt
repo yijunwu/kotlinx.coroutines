@@ -34,21 +34,21 @@ import kotlinx.coroutines.experimental.selects.*
  * This implementation uses lock to protect the buffer, which is held only during very short buffer-update operations.
  * The lock at each subscription is also used to manage concurrent attempts to receive from the same subscriber.
  * The lists of suspended senders or receivers are lock-free.
+ *
+ * @param capacity Buffer capacity.
+ * @param job Optional job that is bound to this channel's lifecycle. See [SendChannel.job].
  */
+// Note: JvmOverloads ensures binary compatibility with job-less version of this constructor
 class ArrayBroadcastChannel<E> @JvmOverloads constructor(
     /**
      * Buffer capacity.
      */
-    val capacity: Int,
-
-    /**
-     * Job owning this channel.
-     */
-    override val job: Job = Job()
-) : AbstractSendChannel<E>(), BroadcastChannel<E> {
+    public val capacity: Int,
+    job: Job = ChannelJobImpl()
+) : AbstractSendChannel<E>(job), BroadcastChannel<E> {
     init {
         require(capacity >= 1) { "ArrayBroadcastChannel capacity must be at least 1, but $capacity was specified" }
-        registerCancellation(job)
+        initChannelJob()
     }
 
     private val bufferLock = ReentrantLock()
@@ -85,6 +85,12 @@ class ArrayBroadcastChannel<E> @JvmOverloads constructor(
         checkSubOffers()
         return true
     }
+
+    override fun cancel(cause: Throwable?): Boolean =
+        close(cause).also {
+            // cancel all subscribers
+            for (sub in subs) sub.cancel(cause)
+        }
 
     // result is `OFFER_SUCCESS | OFFER_FAILED | Closed`
     override fun offerInternal(element: E): Any {
@@ -200,9 +206,14 @@ class ArrayBroadcastChannel<E> @JvmOverloads constructor(
     @Suppress("UNCHECKED_CAST")
     private fun elementAt(index: Long): E = buffer[(index % capacity).toInt()] as E
 
+    @Suppress("DEPRECATION")
     private class Subscriber<E>(
         private val broadcastChannel: ArrayBroadcastChannel<E>
-    ) : AbstractChannel<E>(Job()), ReceiveChannel<E>, SubscriptionReceiveChannel<E> {
+    ) : AbstractChannel<E>(), ReceiveChannel<E>, SubscriptionReceiveChannel<E> {
+        init {
+            initChannelJob()
+        }
+
         private val subLock = ReentrantLock()
 
         @Volatile

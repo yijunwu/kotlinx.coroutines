@@ -25,12 +25,16 @@ import kotlinx.coroutines.experimental.selects.*
  * Sender's interface to [Channel].
  */
 public interface SendChannel<in E> {
-
     /**
-     * The job of this channel bounded with channel lifecycle.
-     * If job is completed with any reason (either normally or exceptionally), channel is [closed][SendChannel.close]
-     * with a completion [cause][Job.getCancellationException] of the job.
-     * If the channel is [closed][isClosedForSend], job is cancelled with the same reason as [SendChannel.close] call
+     * The job of this channel. This job is bound to the channel lifecycle.
+     * 
+     * When this job is completed for any reason (either normally or exceptionally), this
+     * channel is [cancelled][ReceiveChannel.cancel] with a cancellation `cause` of the job (see [Job.cancel]).
+     * Unlike [closing][SendChannel.close] the channel, which is a graceful operation, cancellation of a channel
+     * corresponds to abrupt completion, dropping all buffered elements and suspended senders.
+     * See [ReceiveChannel.cancel] for more details.
+     *
+     * When this channel is [closed][close], this job is cancelled with the same `cause`.
      */
     public val job: Job
 
@@ -109,12 +113,16 @@ public interface SendChannel<in E> {
  * Receiver's interface to [Channel].
  */
 public interface ReceiveChannel<out E> {
-
     /**
-     * The job of this channel bounded with channel lifecycle.
-     * If job is completed with any reason (either normally or exceptionally), channel is [cancelled][ReceiveChannel.cancel]
-     * with a completion [cause][Job.getCancellationException] of the job.
-     * If the channel is cancelled or [closed][isClosedForReceive], job is cancelled with the same reason as [ReceiveChannel.cancel] call
+     * The job of this channel. This job is bound to the channel lifecycle.
+     *
+     * When this job is completed for any reason (either normally or exceptionally), this
+     * channel is [cancelled][ReceiveChannel.cancel] with a cancellation `cause` of the job (see [Job.cancel]).
+     * Unlike [closing][SendChannel.close] the channel, which is a graceful operation, cancellation of a channel
+     * corresponds to abrupt completion, dropping all buffered elements and suspended senders.
+     * See [ReceiveChannel.cancel] for more details.
+     *
+     * When this channel is [cancelled][cancel], this job is cancelled with the same `cause`.
      */
     public val job: Job
 

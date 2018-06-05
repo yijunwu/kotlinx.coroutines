@@ -240,6 +240,10 @@ public actual open class LockFreeLinkedListNode {
     /**
      * Removes this node from the list. Returns `true` when removed successfully, or `false` if the node was already
      * removed or if it was not added to any list in the first place.
+     *
+     * **Note**: Invocation of this operation does not guarantee that remove was actually complete if result was `false`.
+     * In particular, invoking [nextNode].[prevNode] might still return this node even though it is "already removed".
+     * Invoke [helpRemove] to make sure that remove was completed.
      */
     public actual open fun remove(): Boolean {
         while (true) { // lock-free loop on next
@@ -253,6 +257,15 @@ public actual open class LockFreeLinkedListNode {
                 return true
             }
         }
+    }
+
+    /**
+     * Helps fully finish [remove] operation, must be invoked after [remove] if needed.
+     * Ensures that traversing the list via prev pointers sees this node as removed.
+     */
+    public actual fun helpRemove() {
+        val removed = this.next as? Removed ?: error("Must be invoked on a removed node")
+        finishRemove(removed.ref)
     }
 
     public open fun describeRemove() : AtomicDesc? {

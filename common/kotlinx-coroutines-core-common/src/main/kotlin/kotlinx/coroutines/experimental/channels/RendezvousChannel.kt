@@ -17,6 +17,7 @@
 package kotlinx.coroutines.experimental.channels
 
 import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.internalAnnotations.*
 
 /**
  * Rendezvous channel. This channel does not have any buffer at all. An element is transferred from sender
@@ -26,8 +27,17 @@ import kotlinx.coroutines.experimental.*
  * Use `Channel()` factory function to conveniently create an instance of rendezvous channel.
  *
  * This implementation is fully lock-free.
+ *
+ * @param job Optional job that is bound to this channel's lifecycle. See [SendChannel.job].
  */
-public open class RendezvousChannel<E>(job: Job = Job()) : AbstractChannel<E>(job) {
+// Note: JvmOverloads ensures binary compatibility with job-less version of this constructor
+public open class RendezvousChannel<E> @JvmOverloads public constructor(
+    job: Job = ChannelJobImpl()
+) : AbstractChannel<E>(job) {
+    init {
+        initChannelJob()
+    }
+    
     protected final override val isBufferAlwaysEmpty: Boolean get() = true
     protected final override val isBufferEmpty: Boolean get() = true
     protected final override val isBufferAlwaysFull: Boolean get() = true

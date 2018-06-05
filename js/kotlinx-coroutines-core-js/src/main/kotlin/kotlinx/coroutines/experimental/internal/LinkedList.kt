@@ -53,6 +53,8 @@ public open class LinkedListNode {
         return true
     }
 
+    public fun helpRemove() {} // just a stub for JVM parity
+
     public fun addOneIfEmpty(node: Node): Boolean {
         if (_next !== this) return false
         addLast(node)

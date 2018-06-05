@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("MoveLambdaOutsideParentheses")
+
 package kotlinx.coroutines.experimental.channels
 
 import kotlinx.coroutines.experimental.*
@@ -24,9 +26,52 @@ import kotlinx.coroutines.experimental.selects.*
 import kotlin.coroutines.experimental.*
 
 /**
- * Abstract send channel. It is a base class for all send channel implementations.
+ * Abstract base-class for all job-containing cancellable channels.
+ *
+ * **Note**. The actual final class must invoke [initChannelJob] after it was fully constructed.
+ *
+ * @param job Optional job that is bound to this channel's lifecycle. See [SendChannel.job].
+ * @suppress **This is unstable API and it is subject to change.**
  */
-public abstract class AbstractSendChannel<E> : SendChannel<E> {
+public abstract class AbstractCancellableChannel(
+    public val job: Job = ChannelJobImpl()
+) {
+    /**
+     * This function must be invoked the construction of the actual channel.
+     */
+    protected fun initChannelJob() {
+        // performance optimization for channel's default job implementation
+        if (job is ChannelJobImpl) {
+            job.channel = this // initialize it
+        } else {
+            job.invokeOnCompletion(onCancelling = true, handler = ChannelCancellation(job).asHandler)
+        }
+    }
+
+    /**
+     * Cancels this channel.
+     */
+    internal abstract fun cancel(cause: Throwable? = null): Boolean
+
+    private inner class ChannelCancellation(job: Job) : JobCancellationNode<Job>(job) {
+        override fun invoke(cause: Throwable?) {
+            cancel(cause)
+        }
+    }
+}
+
+/**
+ * Abstract send channel. It is a base class for all send channel implementations.
+ *
+ * **Note**. The actual final class must invoke [initChannelJob] after it was fully constructed.
+ *
+ * @param job Optional job that is bound to this channel's lifecycle. See [SendChannel.job].
+ * @suppress **This is unstable API and it is subject to change.**
+ */
+// Note: JvmOverloads ensures binary compatibility with job-less version of this constructor
+public abstract class AbstractSendChannel<E> @JvmOverloads public constructor(
+    job: Job = ChannelJobImpl()
+) : AbstractCancellableChannel(job), SendChannel<E> {
     /** @suppress **This is unstable API and it is subject to change.** */
     protected val queue = LockFreeLinkedListHead()
 
@@ -243,19 +288,17 @@ public abstract class AbstractSendChannel<E> : SendChannel<E> {
 
     public override fun close(cause: Throwable?): Boolean {
         val closed = Closed<E>(cause)
-
         /*
          * Try to commit close by adding a close token to the end of the queue.
          * Successful -> we're now responsible for closing receivers
          * Not successful -> help closing pending receivers to maintain invariant
          * "if (!close()) next send will throw"
          */
-        val closeAdded = queue.addLastIfPrev(closed, { it !is Closed<*> })
+        val closeAdded = queue.addLastIfPrev(closed) { it !is Closed<*> }
         if (!closeAdded) {
             helpClose(queue.prevNode as Closed<*>)
             return false
         }
-
         helpClose(closed)
         onClosed(closed)
         afterClose(cause)
@@ -277,18 +320,17 @@ public abstract class AbstractSendChannel<E> : SendChannel<E> {
          * [close -> false], [send -> transferred 'value' to receiver]
          */
         while (true) {
-            val previous = closed.prevNode
-            // Channel is empty or has no receivers
+            val previous = closed.prevNode // note: finds previous non-removed node
             if (previous is LockFreeLinkedListHead || previous !is Receive<*>) {
+                // Channel is empty or has no receivers -- bail out
                 break
             }
-
             if (!previous.remove()) {
+                // failed to remove the node (due to race) -- retry finding non-removed prevNode
+                // NOTE: remove() DOES NOT help pending remove operation (that marked next pointer)
+                previous.helpRemove() // make sure remove is complete before continuing
                 continue
             }
-
-            @Suppress("UNCHECKED_CAST")
-            previous as Receive<E> // type assertion
             previous.resumeReceiveClosed(closed)
         }
     }
@@ -474,13 +516,18 @@ public abstract class AbstractSendChannel<E> : SendChannel<E> {
 
 /**
  * Abstract send/receive channel. It is a base class for all channel implementations.
+ *
+ * **Note**. The actual final class must invoke [initChannelJob] after it was fully constructed.
+ *
+ * @param job Optional job that is bound to this channel's lifecycle. See [SendChannel.job].
+ * @suppress **This is unstable API and it is subject to change.**
  */
-public abstract class AbstractChannel<E>(final override val job: Job) : AbstractSendChannel<E>(), Channel<E> {
-    // ------ extension points for buffered channels ------
+// Note: JvmOverloads ensures binary compatibility with job-less version of this constructor
+public abstract class AbstractChannel<E> @JvmOverloads public constructor(
+    job: Job = ChannelJobImpl()
+) : AbstractSendChannel<E>(job), Channel<E> {
 
-    init {
-        registerCancellation(job)
-    }
+    // ------ extension points for buffered channels ------
 
     /**
      * Returns `true` if [isBufferEmpty] is always `true`.
@@ -1057,20 +1104,15 @@ private abstract class Receive<in E> : LockFreeLinkedListNode(), ReceiveOrClosed
     abstract fun resumeReceiveClosed(closed: Closed<*>)
 }
 
-internal fun SendChannel<*>.registerCancellation(job: Job) {
-    val cancellation = ChannelCancellation(this, job)
-    job.invokeOnCompletion(cancellation.asHandler)
-}
+// default implementation of channel's Job as a performance optimization (to avoid extra object)
+// this implementation does not leak during channel's construction
+internal class ChannelJobImpl : JobSupport(true) {
+    init { initParentJobInternal(null) }
+    override val onCancelMode: Int get() = ON_CANCEL_MAKE_COMPLETING
+    // it is initialized by AbstractCancellableChannel.initChannelJob
+    internal lateinit var channel: AbstractCancellableChannel
 
-private class ChannelCancellation(
-    private val channel: SendChannel<*>, job: Job) : JobNode<Job>(job) {
-
-    override fun invoke(cause: Throwable?) {
-        if (job.isCancelled) {
-            channel.close(cause)
-        } else {
-            channel.close()
-        }
+    override fun onCancellationInternal(exceptionally: CompletedExceptionally?) {
+        channel.cancel(exceptionally?.cause)
     }
 }
-

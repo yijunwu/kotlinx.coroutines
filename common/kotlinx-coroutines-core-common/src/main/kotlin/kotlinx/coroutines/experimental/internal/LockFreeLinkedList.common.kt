@@ -36,6 +36,7 @@ public expect open class LockFreeLinkedListNode() {
     ): Boolean
 
     public open fun remove(): Boolean
+    public fun helpRemove()
     public fun removeFirstOrNull(): LockFreeLinkedListNode?
     public inline fun <reified T> removeFirstIfIsInstanceOfOrPeekIf(predicate: (T) -> Boolean): T?
 }

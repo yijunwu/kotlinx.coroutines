@@ -37,11 +37,15 @@ import kotlinx.coroutines.experimental.selects.*
  * This implementation is fully lock-free. In this implementation
  * [opening][openSubscription] and [closing][ReceiveChannel.cancel] subscription takes O(N) time, where N is the
  * number of subscribers.
+ *
+ * @param job Optional job that is bound to this channel's lifecycle. See [SendChannel.job].
  */
-public class ConflatedBroadcastChannel<E>(override val job: Job = Job()) : BroadcastChannel<E> {
-
+// Note: JvmOverloads ensures binary compatibility with job-less version of this constructor
+public class ConflatedBroadcastChannel<E> @JvmOverloads public constructor(
+    job: Job = ChannelJobImpl()
+) : AbstractCancellableChannel(job), BroadcastChannel<E> {
     init {
-        registerCancellation(job)
+        initChannelJob()
     }
 
     /**
@@ -53,6 +57,8 @@ public class ConflatedBroadcastChannel<E>(override val job: Job = Job()) : Broad
     constructor(value: E) : this() {
         _state.lazySet(State<E>(value, null))
     }
+
+    override fun cancel(cause: Throwable?) = close(cause)
 
     private val _state = atomic<Any>(INITIAL_STATE) // State | Closed
     private val _updating = atomic(0)
@@ -121,7 +127,7 @@ public class ConflatedBroadcastChannel<E>(override val job: Job = Job()) : Broad
 
     @Suppress("UNCHECKED_CAST")
     override fun openSubscription(): ReceiveChannel<E> {
-        val subscriber = Subscriber<E>(this)
+        val subscriber = Subscriber(this)
         _state.loop { state ->
             when (state) {
                 is Closed -> {
@@ -156,7 +162,7 @@ public class ConflatedBroadcastChannel<E>(override val job: Job = Job()) : Broad
     }
 
     private fun addSubscriber(list: Array<Subscriber<E>>?, subscriber: Subscriber<E>): Array<Subscriber<E>> {
-        if (list == null) return Array<Subscriber<E>>(1) { subscriber }
+        if (list == null) return Array(1) { subscriber }
         return list + subscriber
     }
 
@@ -194,7 +200,7 @@ public class ConflatedBroadcastChannel<E>(override val job: Job = Job()) : Broad
      * future subscribers. This implementation never suspends.
      * It throws exception if the channel [isClosedForSend] (see [close] for details).
      */
-    suspend override fun send(element: E) {
+    override suspend fun send(element: E) {
         offerInternal(element)?.let { throw it.sendException }
     }
 
@@ -251,6 +257,7 @@ public class ConflatedBroadcastChannel<E>(override val job: Job = Job()) : Broad
         block.startCoroutineUndispatched(receiver = this, completion = select.completion)
     }
 
+    @Suppress("DEPRECATION")
     private class Subscriber<E>(
         private val broadcastChannel: ConflatedBroadcastChannel<E>
     ) : ConflatedChannel<E>(), ReceiveChannel<E>, SubscriptionReceiveChannel<E> {

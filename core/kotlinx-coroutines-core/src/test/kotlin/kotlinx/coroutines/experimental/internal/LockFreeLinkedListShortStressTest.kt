@@ -64,8 +64,11 @@ class LockFreeLinkedListShortStressTest : TestBase() {
                     if (node != null) {
                         if (node.remove())
                             undone.incrementAndGet()
-                        else
+                        else {
+                            // randomly help other removal's completion
+                            if (rnd.nextBoolean()) node.helpRemove()
                             missed.incrementAndGet()
+                        }
                     }
                 }
                 completedAdder.incrementAndGet()
