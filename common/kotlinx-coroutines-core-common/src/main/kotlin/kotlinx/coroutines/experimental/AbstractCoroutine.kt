@@ -119,7 +119,7 @@ public abstract class AbstractCoroutine<in T>(
      * Completes execution of this with coroutine exceptionally with the specified [exception].
      */
     public final override fun resumeWithException(exception: Throwable) {
-        makeCompletingOnce(CompletedExceptionally(exception), defaultResumeMode)
+        makeCompletingOnce(CancelledJob(this, exception), defaultResumeMode)
     }
 
     internal final override fun handleException(exception: Throwable) {

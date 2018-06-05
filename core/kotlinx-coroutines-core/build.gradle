@@ -1,5 +1,6 @@
 dependencies {
     testCompile "com.devexperts.lincheck:core:$lincheck_version"
+    testCompile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 }
 
 task checkJdk16() {

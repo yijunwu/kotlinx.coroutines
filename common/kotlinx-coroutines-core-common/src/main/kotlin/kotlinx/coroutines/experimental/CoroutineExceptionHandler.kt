@@ -35,15 +35,25 @@ internal expect fun handleCoroutineExceptionImpl(context: CoroutineContext, exce
 public fun handleCoroutineException(context: CoroutineContext, exception: Throwable) {
     // if exception handling fails, make sure the original exception is not lost
     try {
+        // ignore CancellationException (they are normal means to terminate a coroutine)
+        if (exception is CancellationException) {
+            return
+        }
+
+        // If parent is successfully cancelled, then we're done, he is now responsible
+        // for handling an exception
+        val parent = context[Job]
+        if (parent != null && parent.cancel(exception)) {
+            return
+        }
+
+        // Invoke user-defined handler first
         context[CoroutineExceptionHandler]?.let {
             it.handleException(context, exception)
             return
         }
-        // ignore CancellationException (they are normal means to terminate a coroutine)
-        if (exception is CancellationException) return
-        // try cancel job in the context
-        context[Job]?.cancel(exception)
-        // platform-specific
+
+        // Invoke native implementation
         handleCoroutineExceptionImpl(context, exception)
     } catch (handlerException: Throwable) {
         // simply rethrow if handler threw the original exception

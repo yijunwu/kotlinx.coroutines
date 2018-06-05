@@ -125,6 +125,7 @@ public interface Job : CoroutineContext.Element {
     /**
      * Returns `true` if this job was [cancelled][cancel]. In the general case, it does not imply that the
      * job has already [completed][isCompleted] (it may still be cancelling whatever it was doing).
+     * TODO deprecate this
      */
     public val isCancelled: Boolean
 
