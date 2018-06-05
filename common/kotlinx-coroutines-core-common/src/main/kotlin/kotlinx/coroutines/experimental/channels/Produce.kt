@@ -123,6 +123,7 @@ private class ProducerCoroutine<E>(
     override fun onCancellationInternal(exceptionally: CompletedExceptionally?) {
         val cause = exceptionally?.cause
         val processed = when (exceptionally) {
+            // TODO something should break here? Cover with test
             // producer coroutine was cancelled -- cancel channel, but without cause if it was closed without cause
             is CancelledJob -> _channel.cancel(if (cause is CancellationException) null else cause)
             else -> _channel.close(cause) // producer coroutine has completed -- close channel

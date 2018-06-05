@@ -169,9 +169,49 @@ private open class StandaloneCoroutine(
     active: Boolean
 ) : AbstractCoroutine<Unit>(parentContext, active) {
     override fun hasOnFinishingHandler(update: Any?) = update is CompletedExceptionally
+
     override fun onFinishingInternal(update: Any?) {
+
+        /*
+         * TODO explain and rename `finishing`
+         */
+        val cancelledJob = update as? CancelledJob ?: return
+        if (cancelledJob.cause is CancellationException) return
+
         // note the use of the parent's job context below!
-        if (update is CompletedExceptionally) handleCoroutineException(parentContext, update.cause)
+        val parent = parentContext[Job]
+        if (parent != null && parent.cancel(update.cause)) {
+            cancelledJob.isHandled = true
+        }
+    }
+
+    override fun onFreeze(cancelled: CancelledJob) {
+
+        if (!cancelled.isHandled) {
+            // TODO consolidate juggling with exceptions when more test cases
+            // will be introduced and more implementors will require this functionality
+
+            /*
+             * Try to unwrap exception to properly handle following case:
+             * launch(parent) {
+             *    throw Exception()
+             * }
+             *
+             * parent.cancel()
+             * Original cancellation cause of the child will be JCE("Parent cancelled"),
+             * but we'd like to pass 'Exception' to the handler, thus on the final step
+             * we can detect that current JCE was an error
+             */
+            val cause = cancelled.dominatingException()
+            cancelled.mergeUpdatesInto(cause)
+            handleCoroutineException(parentContext, cause)
+        } else {
+            /*
+             * Update original cause with suppressions.
+             * Parent of this job has reference to original cause, thus we can modify only cause to properly propagate updates to the parent
+             */
+            cancelled.mergeUpdates()
+        }
     }
 }
 

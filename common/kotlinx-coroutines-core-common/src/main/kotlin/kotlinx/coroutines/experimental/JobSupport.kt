@@ -134,6 +134,7 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
 
     public final override val isCompleted: Boolean get() = state !is Incomplete
 
+    // TODO deprecate properly
     public final override val isCancelled: Boolean get() {
         val state = this.state
         return state is CancelledJob || (state is Finishing && state.cancelled != null)
@@ -149,8 +150,48 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
      * If this method succeeds, state of this job will never be mutated again
      */
     private fun tryFinalizeState(expect: Incomplete, proposedUpdate: Any?, mode: Int): Boolean {
+        // TODO merge can be invoked more than once, but it can be easily fixed
         val update = coerceProposedUpdate(expect, proposedUpdate)
-        if (!tryFinalizeState(expect, update)) return false
+
+        /*
+         * If we're finalizing state of the job and it's cancelled,
+         * we should go through cancelling -> frozen -> cancelled
+         * transition.
+         *
+         * Frozen state (and onFreeze) has one purpose only: to merge all exceptions into
+         * one and pass to exception handler, so handler will have single non-mutating
+         * state of all exceptions thrown in jobs hierarchy.
+         */
+        if (update is CancelledJob) {
+            val list: NodeList?
+            list = if (expect is JobNode<*>) {
+                val result = NodeList(active = true)
+                if (expect.addOneIfEmpty(result)) {
+                    result
+                } else {
+                    return false
+                }
+            } else {
+                expect.list
+            }
+
+            val frozen = Frozen(update, list)
+            if (!_state.compareAndSet(expect, frozen)) return false
+            onFreeze(update)
+            // TODO assure that this CAS always succeeds
+            _state.compareAndSet(frozen, update)
+        } else {
+            if (!tryFinalizeState(expect, update)) return false
+        }
+
+
+        // Unregister from parent job
+        parentHandle?.let {
+            it.dispose() // volatile read parentHandle _after_ state was updated
+            parentHandle = NonDisposableHandle // release it just in case, to aid GC
+        }
+
+        // Now transfer to the final state and invoke all handlers
         completeStateFinalization(expect, update, mode)
         return true
     }
@@ -161,13 +202,7 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
      */
     private fun tryFinalizeState(expect: Incomplete, update: Any?): Boolean {
         require(update !is Incomplete) // only incomplete -> completed transition is allowed
-        if (!_state.compareAndSet(expect, update)) return false
-        // Unregister from parent job
-        parentHandle?.let {
-            it.dispose() // volatile read parentHandle _after_ state was updated
-            parentHandle = NonDisposableHandle // release it just in case, to aid GC
-        }
-        return true // continues in completeUpdateState
+        return _state.compareAndSet(expect, update)
     }
 
     /**
@@ -199,6 +234,7 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
             createCancelled(expect.cancelled, proposedUpdate) else proposedUpdate
 
     private fun isCorrespondinglyCancelled(cancelled: CancelledJob, proposedUpdate: Any?): Boolean {
+        cancelled.mergeUpdates()
         if (proposedUpdate !is CancelledJob) return false
         // NOTE: equality comparison of causes is performed here by design, see equals of JobCancellationException
         return proposedUpdate.cause == cancelled.cause || proposedUpdate.cause is JobCancellationException
@@ -208,12 +244,12 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
         if (proposedUpdate !is CompletedExceptionally) return cancelled // not exception -- just use original cancelled
         val exception = proposedUpdate.cause
         if (cancelled.cause == exception) return cancelled // that is the cancelled we need already!
-        // todo: We need to rework this logic to keep original cancellation cause in the state and suppress other exceptions
-        //       that could have occurred while coroutine is being cancelled.
         // Do not spam with JCE in suppressed exceptions
         if (cancelled.cause !is JobCancellationException) {
             exception.addSuppressedThrowable(cancelled.cause)
         }
+
+        // Note that isHandled is not restored here, so new exception will be reported to parent if possible
         return CancelledJob(this, exception)
     }
 
@@ -333,11 +369,17 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
                     if (list == null) { // SINGLE/SINGLE+
                         promoteSingleToNodeList(state as JobNode<*>)
                     } else {
-                        if (state is Finishing && state.cancelled != null && onCancelling) {
+                        if (onCancelling && state is Finishing && state.cancelled != null) {
                             // installing cancellation handler on job that is being cancelled
                             if (invokeImmediately) handler(state.cancelled.cause)
                             return NonDisposableHandle
                         }
+
+                        if (onCancelling && state is Frozen) {
+                            if (invokeImmediately) handler(state.cancelled.cause)
+                            return NonDisposableHandle
+                        }
+
                         val node = nodeCache ?: makeNode(handler, onCancelling).also { nodeCache = it }
                         if (addLastAtomic(state, list, node)) return node
                     }
@@ -370,6 +412,7 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
     }
 
     private fun promoteSingleToNodeList(state: JobNode<*>) {
+        // TODO why returned result is not checked?
         // try to promote it to list (SINGLE+ state)
         state.addOneIfEmpty(NodeList(active = true))
         // it must be in SINGLE+ state or state has changed (node could have need removed from state)
@@ -453,7 +496,7 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
 
     public override fun cancel(cause: Throwable?): Boolean = when (onCancelMode) {
         ON_CANCEL_MAKE_CANCELLING -> makeCancelling(cause)
-        ON_CANCEL_MAKE_COMPLETING -> makeCompletingOnCancel(cause)
+        ON_CANCEL_MAKE_COMPLETING -> makeCompleting(CancelledJob(this, cause))
         else -> error("Invalid onCancelMode $onCancelMode")
     }
 
@@ -488,10 +531,15 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
                     }
                 }
                 is Finishing -> { // Completing/Cancelling the job, may cancel
-                    if (state.cancelled != null) return false // already cancelling
-                    if (tryMakeCancelling(state, state.list, cause)) return true
+                    if (state.cancelled != null) {
+                        // If job is already cancelling, we should *atomically* add new exception, otherwise
+                        // we can lost one when gathering all pending exception for exception handler
+                        if (cause == null || state.cancelled.addLastIf(cause) { this.state === state }) {
+                            return true
+                        }
+                    } else if (tryMakeCancelling(state, state.list, cause)) return true
                 }
-                else -> { // is inactive
+                else -> { // is inactive or frozen
                     return false
                 }
             }
@@ -502,14 +550,12 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
     private fun tryMakeCancelling(expect: Incomplete, list: NodeList, cause: Throwable?): Boolean {
         val cancelled = CancelledJob(this, cause)
         if (!_state.compareAndSet(expect, Finishing(list, cancelled, false))) return false
+        // TODO investigate onFreeze, test case
         onFinishingInternal(cancelled)
         onCancellationInternal(cancelled)
         notifyCancellation(list, cause)
         return true
     }
-
-    private fun makeCompletingOnCancel(cause: Throwable?): Boolean =
-        makeCompleting(CancelledJob(this, cause))
 
     /**
      * @suppress **This is unstable API and it is subject to change.**
@@ -538,7 +584,7 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
 
     private fun makeCompletingInternal(proposedUpdate: Any?, mode: Int): Int {
         loopOnState { state ->
-            if (state !is Incomplete)
+            if (state !is Incomplete || state is Frozen)
                 return COMPLETING_ALREADY_COMPLETING
             if (state is Finishing && state.completing)
                 return COMPLETING_ALREADY_COMPLETING
@@ -667,7 +713,8 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
     internal open fun hasOnFinishingHandler(update: Any?) = false
 
     /**
-     * Handler which is invoked once when job state became [Finishing]
+     * Handler which is invoked once when job state became [Finishing].
+     * This handler can be invoked more than once
      * @suppress **This is unstable API and it is subject to change.**
      */
     internal open fun onFinishingInternal(update: Any?) {}
@@ -679,6 +726,12 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
      */
     internal open fun onStartInternal() {}
 
+    /**
+     *  TODO
+     */
+    internal open fun onFreeze(cancelled: CancelledJob) {
+
+    }
 
     /**
      * Override for post-completion actions that need to do something with the state.
@@ -704,7 +757,6 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
                 if (state.completing) append("Completing")
             }
             is Incomplete -> if (state.isActive) "Active" else "New"
-            is CancelledJob -> "Cancelled"
             is CompletedExceptionally -> "CompletedExceptionally"
             else -> "Completed"
         }
@@ -845,6 +897,11 @@ private class Empty(override val isActive: Boolean) : Incomplete {
 internal class JobImpl(parent: Job? = null) : JobSupport(true) {
     init { initParentJobInternal(parent) }
     override val onCancelMode: Int get() = ON_CANCEL_MAKE_COMPLETING
+
+    override fun cancel(cause: Throwable?): Boolean {
+        super.cancel(cause) // TODO explain
+        return false
+    }
 }
 
 // -------- invokeOnCompletion nodes
@@ -852,6 +909,10 @@ internal class JobImpl(parent: Job? = null) : JobSupport(true) {
 internal interface Incomplete {
     val isActive: Boolean
     val list: NodeList? // is null only for Empty and JobNode incomplete state objects
+}
+
+private class Frozen(val cancelled: CancelledJob, override val list: NodeList?) : Incomplete {
+    override val isActive: Boolean get() = false
 }
 
 internal abstract class JobNode<out J : Job>(

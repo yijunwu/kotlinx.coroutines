@@ -164,9 +164,7 @@ class CoroutinesTest : TestBase() {
 
     @Test
     fun testCancelParentOnChildException() = runTest(
-        expected = { it is JobCancellationException && it.cause is TestException },
-        unhandled = listOf({ it -> it is TestException })
-    ) {
+        expected = { it is JobCancellationException && it.cause is TestException }) {
         expect(1)
         launch(coroutineContext) {
             finish(3)
@@ -180,12 +178,7 @@ class CoroutinesTest : TestBase() {
 
     @Test
     fun testCancelParentOnNestedException() = runTest(
-        expected = { it is JobCancellationException && it.cause is TestException },
-        unhandled = listOf(
-            { it -> it is TestException },
-            { it -> it is TestException }
-        )
-    ) {
+        expected = { it is JobCancellationException && it.cause is TestException }) {
         expect(1)
         launch(coroutineContext) {
             expect(3)
@@ -219,15 +212,15 @@ class CoroutinesTest : TestBase() {
         expect(2)
         yield() // to job
         expect(4)
-        assertTrue(job.isActive && !job.isCompleted && !job.isCancelled)
+        assertTrue(job.isActive && !job.isCompleted)
         assertTrue(job.cancel())  // cancels job
         expect(5) // still here
-        assertTrue(!job.isActive && !job.isCompleted && job.isCancelled)
-        assertTrue(!job.cancel()) // second attempt returns false
+        assertTrue(!job.isActive && !job.isCompleted)
+        assertTrue(job.cancel()) // second attempt returns true as well, job is still completing
         expect(6) // we're still here
         job.join() // join the job, let job complete its "finally" section
         expect(8)
-        assertTrue(!job.isActive && job.isCompleted && job.isCancelled)
+        assertTrue(!job.isActive && job.isCompleted)
         finish(9)
     }
 
@@ -250,9 +243,7 @@ class CoroutinesTest : TestBase() {
 
     @Test
     fun testCancelAndJoinChildCrash() = runTest(
-        expected = { it is JobCancellationException && it.cause is TestException },
-        unhandled = listOf({it -> it is TestException })
-    ) {
+        expected = { it is JobCancellationException && it.cause is TestException }) {
         expect(1)
         val job = launch(coroutineContext, CoroutineStart.UNDISPATCHED) {
             expect(2)

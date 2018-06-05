@@ -16,6 +16,7 @@
 
 package kotlinx.coroutines.experimental
 
+import kotlinx.coroutines.experimental.internal.*
 import kotlinx.coroutines.experimental.internalAnnotations.*
 import kotlin.coroutines.experimental.*
 
@@ -39,7 +40,6 @@ open class CompletedExceptionally(
  * A specific subclass of [CompletedExceptionally] for cancelled jobs.
  *
  * **Note: This class cannot be used outside of internal coroutines framework**.
- * TODO rename to CancelledJob?
  *
  * @param job the job that was cancelled.
  * @param cause the exceptional completion cause. If `cause` is null, then a [JobCancellationException] is created.
@@ -48,7 +48,60 @@ open class CompletedExceptionally(
 internal class CancelledJob(
     job: Job,
     cause: Throwable?
-) : CompletedExceptionally(cause ?: JobCancellationException("Job was cancelled normally", null, job))
+) : CompletedExceptionally(cause ?: JobCancellationException("Job was cancelled normally", null, job)) {
+
+    // TODO optimize for null case with atomic addLast?
+    private val throwables = LockFreeLinkedListHead()
+
+    // TODO maybe merge with exception container
+    // This field is owned by one thread and has HB edge on modification and reading TODO or not?
+    public var isHandled = false
+
+    // TODO lambda is always allocated
+    public fun addLastIf(t: Throwable, condition: () -> Boolean): Boolean {
+        return throwables.addLastIf(ExceptionNode(t), condition)
+    }
+
+    public fun mergeUpdates() = mergeUpdatesInto(cause)
+
+    public fun mergeUpdatesInto(t: Throwable) {
+        // Do not add JCE(cause) and cause to suppressed
+        throwables.forEach<ExceptionNode> { node ->
+            val exception = node.exception
+            if (exception !== t && !(exception is CancellationException && exception.cause === t)) {
+                t.addSuppressedThrowable(exception)
+            }
+        }
+    }
+
+    public fun dominatingException(): Throwable {
+        val initial = unwrap(cause)
+        if (initial !is CancellationException) {
+            return initial
+        }
+
+        throwables.forEach<ExceptionNode> { node ->
+            val result = unwrap(node.exception)
+            if (result !is JobCancellationException) {
+                return result
+            }
+        }
+
+        return initial
+    }
+
+    private fun unwrap(exception: Throwable): Throwable {
+        if (exception !is CancellationException) return exception
+        var result = exception.cause ?: return exception
+        while (result.cause != null) {
+            result = result.cause ?: return result
+        }
+
+        return result
+    }
+
+    private class ExceptionNode(val exception: Throwable) : LockFreeLinkedListNode()
+}
 
 /**
  * A specific subclass of [CompletedExceptionally] for cancelled [AbstractContinuation].
