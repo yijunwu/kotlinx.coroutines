@@ -148,6 +148,22 @@ class ActorTest(private val capacity: Int) : TestBase() {
     }
 
     @Test
+    fun testThrowingActor() = runTest(unhandled = listOf({e -> e is IllegalArgumentException})) {
+        val parent = Job()
+        val actor = actor<Int>(context = coroutineContext, parent = parent) {
+            channel.consumeEach {
+                expect(1)
+                throw IllegalArgumentException()
+            }
+        }
+
+        actor.send(1)
+        parent.cancel()
+        parent.join()
+        finish(2)
+    }
+
+    @Test
     fun testJoinActor() = runTest {
         val actor = actor<Int>(coroutineContext, capacity = capacity) {
             expect(2)

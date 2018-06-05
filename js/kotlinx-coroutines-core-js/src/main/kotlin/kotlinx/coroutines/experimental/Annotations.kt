@@ -16,7 +16,7 @@
 
 package kotlinx.coroutines.experimental.internalAnnotations
 
-@Target(AnnotationTarget.FILE)
+@Target(AnnotationTarget.FILE, AnnotationTarget.FUNCTION)
 internal actual annotation class JvmName(actual val name: String)
 
 @Target(AnnotationTarget.FILE)
@@ -27,3 +27,7 @@ internal actual annotation class JvmOverloads
 internal actual annotation class JvmField
 
 internal actual annotation class Volatile
+
+@Suppress("ACTUAL_WITHOUT_EXPECT")
+internal actual typealias JsName = kotlin.js.JsName
+

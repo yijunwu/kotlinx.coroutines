@@ -88,6 +88,7 @@ public abstract class kotlinx/coroutines/experimental/CloseableCoroutineDispatch
 }
 
 public final class kotlinx/coroutines/experimental/CommonPool : kotlinx/coroutines/experimental/CoroutineDispatcher {
+	public static final field DEFAULT_PARALLELISM_PROPERTY_NAME Ljava/lang/String;
 	public static final field INSTANCE Lkotlinx/coroutines/experimental/CommonPool;
 	public fun dispatch (Lkotlin/coroutines/experimental/CoroutineContext;Ljava/lang/Runnable;)V
 	public fun toString ()Ljava/lang/String;
@@ -547,7 +548,8 @@ public final class kotlinx/coroutines/experimental/channels/ArrayBroadcastChanne
 	public final fun getCapacity ()I
 	public fun getJob ()Lkotlinx/coroutines/experimental/Job;
 	public fun open ()Lkotlinx/coroutines/experimental/channels/SubscriptionReceiveChannel;
-	public fun openSubscription ()Lkotlinx/coroutines/experimental/channels/SubscriptionReceiveChannel;
+	public fun openSubscription ()Lkotlinx/coroutines/experimental/channels/ReceiveChannel;
+	public synthetic fun openSubscription ()Lkotlinx/coroutines/experimental/channels/SubscriptionReceiveChannel;
 }
 
 public class kotlinx/coroutines/experimental/channels/ArrayChannel : kotlinx/coroutines/experimental/channels/AbstractChannel {
@@ -570,11 +572,13 @@ public class kotlinx/coroutines/experimental/channels/ArrayChannel : kotlinx/cor
 public abstract interface class kotlinx/coroutines/experimental/channels/BroadcastChannel : kotlinx/coroutines/experimental/channels/SendChannel {
 	public static final field Factory Lkotlinx/coroutines/experimental/channels/BroadcastChannel$Factory;
 	public abstract fun open ()Lkotlinx/coroutines/experimental/channels/SubscriptionReceiveChannel;
-	public abstract fun openSubscription ()Lkotlinx/coroutines/experimental/channels/SubscriptionReceiveChannel;
+	public abstract fun openSubscription ()Lkotlinx/coroutines/experimental/channels/ReceiveChannel;
+	public abstract synthetic fun openSubscription ()Lkotlinx/coroutines/experimental/channels/SubscriptionReceiveChannel;
 }
 
 public final class kotlinx/coroutines/experimental/channels/BroadcastChannel$DefaultImpls {
 	public static fun open (Lkotlinx/coroutines/experimental/channels/BroadcastChannel;)Lkotlinx/coroutines/experimental/channels/SubscriptionReceiveChannel;
+	public static synthetic fun openSubscription (Lkotlinx/coroutines/experimental/channels/BroadcastChannel;)Lkotlinx/coroutines/experimental/channels/SubscriptionReceiveChannel;
 }
 
 public final class kotlinx/coroutines/experimental/channels/BroadcastChannel$Factory {
@@ -583,6 +587,7 @@ public final class kotlinx/coroutines/experimental/channels/BroadcastChannel$Fac
 
 public final class kotlinx/coroutines/experimental/channels/BroadcastChannelKt {
 	public static final fun BroadcastChannel (I)Lkotlinx/coroutines/experimental/channels/BroadcastChannel;
+	public static final synthetic fun use (Lkotlinx/coroutines/experimental/channels/ReceiveChannel;Lkotlin/jvm/functions/Function1;)V
 }
 
 public abstract interface class kotlinx/coroutines/experimental/channels/Channel : kotlinx/coroutines/experimental/channels/ReceiveChannel, kotlinx/coroutines/experimental/channels/SendChannel {
@@ -730,7 +735,8 @@ public final class kotlinx/coroutines/experimental/channels/ConflatedBroadcastCh
 	public fun isFull ()Z
 	public fun offer (Ljava/lang/Object;)Z
 	public fun open ()Lkotlinx/coroutines/experimental/channels/SubscriptionReceiveChannel;
-	public fun openSubscription ()Lkotlinx/coroutines/experimental/channels/SubscriptionReceiveChannel;
+	public fun openSubscription ()Lkotlinx/coroutines/experimental/channels/ReceiveChannel;
+	public synthetic fun openSubscription ()Lkotlinx/coroutines/experimental/channels/SubscriptionReceiveChannel;
 	public fun send (Ljava/lang/Object;Lkotlin/coroutines/experimental/Continuation;)Ljava/lang/Object;
 }
 

@@ -19,16 +19,16 @@ package guide.reactive.basic.example03
 
 import io.reactivex.*
 import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.channels.*
 import kotlinx.coroutines.experimental.reactive.*
-import kotlin.coroutines.experimental.*
 
 fun main(args: Array<String>) = runBlocking<Unit> {
     val source = Flowable.range(1, 5) // a range of five numbers
         .doOnSubscribe { println("OnSubscribe") } // provide some insight
         .doFinally { println("Finally") }         // ... into what's going on
     var cnt = 0 
-    source.openSubscription().use { channel -> // open channel to the source
-        for (x in channel) { // iterate over the channel to receive elements from it
+    source.openSubscription().consume { // open channel to the source
+        for (x in this) { // iterate over the channel to receive elements from it
             println(x)
             if (++cnt >= 3) break // break when 3 elements are printed
         }
