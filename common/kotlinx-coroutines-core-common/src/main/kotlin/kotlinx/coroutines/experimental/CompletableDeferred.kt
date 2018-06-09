@@ -83,7 +83,6 @@ private class CompletableDeferredImpl<T>(
     override fun complete(value: T): Boolean =
         makeCompleting(value)
 
-    // TODO doesn't work with new exception handling
     override fun completeExceptionally(exception: Throwable): Boolean =
         makeCompleting(CompletedExceptionally(exception))
 }

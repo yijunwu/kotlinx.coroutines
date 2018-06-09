@@ -1,9 +1,10 @@
-package kotlinx.coroutines.experimental
+package kotlinx.coroutines.experimental.exceptions
 
+import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.CoroutineStart.*
 import org.junit.*
 import org.junit.Test
 import java.io.*
-import java.util.*
 import java.util.concurrent.*
 import kotlin.coroutines.experimental.*
 import kotlin.test.*
@@ -18,57 +19,6 @@ class JobExceptionHandlingTest : TestBase() {
         executor.close()
     }
 
-    class CapturingHandler : AbstractCoroutineContextElement(CoroutineExceptionHandler), CoroutineExceptionHandler {
-        private val unhandled: MutableList<Throwable> = Collections.synchronizedList(ArrayList<Throwable>())!!
-
-        override fun handleException(context: CoroutineContext, exception: Throwable) {
-            unhandled.add(exception)
-        }
-
-        fun getException(): Throwable {
-            assert(unhandled.size == 1) { "Expected one unhandled exception, but have ${unhandled.size}: $unhandled" }
-            return unhandled[0]
-        }
-    }
-
-    @Test
-    fun testCancelChild() = runTest {
-        val parent = launch(coroutineContext) {
-            expect(1)
-            val child = launch(coroutineContext) {
-                expect(2)
-            }
-
-            yield()
-            expect(3)
-            child.cancel()
-            child.join()
-            expect(4)
-        }
-
-        parent.join()
-        finish(5)
-    }
-
-    @Test
-    fun cancelChildWithCause()  = runTest {
-        val parent = launch(coroutineContext) {
-            expect(1)
-            val child = launch(coroutineContext) {
-                expect(2)
-            }
-
-            yield()
-            expect(3)
-            child.cancel(IOException())
-            child.join()
-            expect(4)
-        }
-
-        parent.join()
-        finish(5)
-    }
-
     @Test
     fun testExceptionDuringCancellation() {
         /*
@@ -79,11 +29,10 @@ class JobExceptionHandlingTest : TestBase() {
          *
          * Github issue #354
          */
-        val exception = run {
+        val exception = runBlock {
             val job = Job()
-            launch(coroutineContext, parent = job, start = CoroutineStart.ATOMIC) {
+            launch(coroutineContext, parent = job, start = ATOMIC) {
                 expect(2)
-                // makeCompletingOnce -> makeCompletingInternal -> true
                 throw IllegalStateException()
             }
 
@@ -96,56 +45,36 @@ class JobExceptionHandlingTest : TestBase() {
     }
 
     @Test
-    fun testExceptionUnwrapping() {
-        val exception = run {
+    fun testConsecutiveCancellation() {
+        /*
+         * Root parent: JobImpl()
+         * Child: throws IOException
+         * Launcher: cancels job with AE and then cancels with NPE
+         * Result: IOE with suppressed AE with suppressed NPE
+         */
+        val exception = runBlock {
             val job = Job()
-            launch(coroutineContext, parent = job) {
+            val child = launch(coroutineContext, parent = job, start = ATOMIC) {
                 expect(2)
-                launch(coroutineContext) {
-                    launch(coroutineContext) {
-                        launch(coroutineContext) {
-                            throw IllegalStateException()
-                        }
-                    }
-                }
+                throw IOException()
             }
 
             expect(1)
-            job.join()
-            finish(3)
-        }
-
-        checkException<IllegalStateException>(exception)
-    }
-
-    @Test
-    fun testExceptionUnwrappingWithSuspensions() {
-        val exception = run {
-            val job = Job()
-            launch(coroutineContext, parent = job) {
-                expect(2)
-                launch(coroutineContext) {
-                    launch(coroutineContext) {
-                        launch(coroutineContext) {
-                            launch(coroutineContext) {
-                                throw IOException()
-                            }
-                            yield()
-                        }
-                        delay(Long.MAX_VALUE)
-                    }
-                    delay(Long.MAX_VALUE)
-                }
-                delay(Long.MAX_VALUE)
-            }
-
-            expect(1)
+            child.cancel(ArithmeticException())
+            child.cancel(NullPointerException())
             job.join()
             finish(3)
         }
 
         assertTrue(exception is IOException)
+        var suppressed = exception.suppressed()
+        assertEquals(1, suppressed.size)
+        val ae = suppressed[0] as ArithmeticException
+        suppressed = ae.suppressed()
+        assertEquals(1, suppressed.size)
+        assertTrue(suppressed[0] is NullPointerException)
     }
+
 
     @Test
     fun testChildException() {
@@ -154,11 +83,10 @@ class JobExceptionHandlingTest : TestBase() {
          * Child: throws ISE
          * Result: ISE in exception handler
          */
-        val exception = run {
+        val exception = runBlock {
             val job = Job()
-            launch(coroutineContext, parent = job, start = CoroutineStart.ATOMIC) {
+            launch(coroutineContext, parent = job, start = ATOMIC) {
                 expect(2)
-                // makeCompletingOnce -> makeCompletingInternal -> true
                 throw IllegalStateException()
             }
 
@@ -178,7 +106,7 @@ class JobExceptionHandlingTest : TestBase() {
          * Inner child: throws AE
          * Result: AE in exception handler
          */
-        val exception = run {
+        val exception = runBlock {
             val job = Job()
             launch(coroutineContext, parent = job) {
                 expect(2) // <- child is launched successfully
@@ -212,7 +140,7 @@ class JobExceptionHandlingTest : TestBase() {
          * Inner child: throws AE
          * Result: IOE with suppressed AE
          */
-        val exception = run {
+        val exception = runBlock {
             val job = Job()
             launch(coroutineContext, parent = job) {
                 expect(2) // <- child is launched successfully
@@ -251,11 +179,11 @@ class JobExceptionHandlingTest : TestBase() {
         * Inner child: throws AE
         * Result: AE
         */
-        val exception = run {
+        val exception = runBlock {
             val job = Job()
-            launch(coroutineContext, parent = job, start = CoroutineStart.ATOMIC) {
+            launch(coroutineContext, parent = job, start = ATOMIC) {
                 expect(2)
-                launch(coroutineContext, start = CoroutineStart.ATOMIC) {
+                launch(coroutineContext, start = ATOMIC) {
                     expect(3) // <- child's child is launched successfully
                     throw ArithmeticException()
                 }
@@ -279,27 +207,28 @@ class JobExceptionHandlingTest : TestBase() {
          * Owner: launch 3 children, every of it throws an exception, and then call delay()
          * Result: one of the exceptions with the rest two as suppressed
          */
-        val exception = run(executor) {
+        val exception = runBlock(executor) {
             val barrier = CyclicBarrier(4)
-            val job = launch(coroutineContext.minusKey(Job)) {
-                expect(2)
-                launch(coroutineContext) {
-                    barrier.await()
-                    throw ArithmeticException()
-                }
+            val job =
+                launch(coroutineContext.minusKey(Job)) {
+                    expect(2)
+                    launch(coroutineContext) {
+                        barrier.await()
+                        throw ArithmeticException()
+                    }
 
-                launch(coroutineContext) {
-                    barrier.await()
-                    throw IOException()
-                }
+                    launch(coroutineContext) {
+                        barrier.await()
+                        throw IOException()
+                    }
 
-                launch(coroutineContext) {
-                    barrier.await()
-                    throw IllegalArgumentException()
-                }
+                    launch(coroutineContext) {
+                        barrier.await()
+                        throw IllegalArgumentException()
+                    }
 
-                delay(Long.MAX_VALUE)
-            }
+                    delay(Long.MAX_VALUE)
+                }
 
             expect(1)
             barrier.await()
@@ -328,21 +257,30 @@ class JobExceptionHandlingTest : TestBase() {
           * Owner: launch 3 children, every of it throws an exception, and then call delay()
           * Result: AE with suppressed IOE and IAE
           */
-        val exception = run {
+        val exception = runBlock {
             val job = Job()
-            launch(coroutineContext, parent = job, start = CoroutineStart.ATOMIC) {
+            launch(coroutineContext, parent = job, start = ATOMIC) {
                 expect(2)
-                launch(coroutineContext, start = CoroutineStart.ATOMIC) {
+                launch(
+                    coroutineContext,
+                    start = ATOMIC
+                ) {
                     expect(3)
                     throw ArithmeticException()
                 }
 
-                launch(coroutineContext, start = CoroutineStart.ATOMIC) {
+                launch(
+                    coroutineContext,
+                    start = ATOMIC
+                ) {
                     expect(4)
                     throw IOException()
                 }
 
-                launch(coroutineContext, start = CoroutineStart.ATOMIC) {
+                launch(
+                    coroutineContext,
+                    start = ATOMIC
+                ) {
                     expect(5)
                     throw IllegalArgumentException()
                 }
@@ -355,27 +293,10 @@ class JobExceptionHandlingTest : TestBase() {
             finish(6)
         }
 
-
         assertTrue(exception is ArithmeticException)
         val suppressed = exception.suppressed()
         assertEquals(2, suppressed.size)
         assertTrue(suppressed[0] is IOException)
         assertTrue(suppressed[1] is IllegalArgumentException)
-    }
-
-
-    private inline fun <reified T : Throwable> checkException(exception: Throwable) {
-        assertTrue(exception is T)
-        assertTrue(exception.suppressed().isEmpty())
-        assertNull(exception.cause)
-    }
-
-    private fun run(
-        context: CoroutineContext = EmptyCoroutineContext,
-        block: suspend CoroutineScope.() -> Unit
-    ): Throwable {
-        val handler = CapturingHandler()
-        runBlocking(context + handler, block = block)
-        return handler.getException()
     }
 }

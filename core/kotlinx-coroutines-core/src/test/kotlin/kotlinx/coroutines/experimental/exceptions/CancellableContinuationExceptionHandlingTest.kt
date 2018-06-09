@@ -1,5 +1,6 @@
-package kotlinx.coroutines.experimental
+package kotlinx.coroutines.experimental.exceptions
 
+import kotlinx.coroutines.experimental.*
 import org.junit.Test
 import java.io.*
 import java.nio.channels.*
@@ -278,7 +279,10 @@ class CancellableContinuationExceptionHandlingTest : TestBase() {
         job.cancel(cancellationCause)
 
         try {
-            withContext(wrapperDispatcher(coroutineContext) + job, CoroutineStart.ATOMIC) {
+            withContext(
+                wrapperDispatcher(coroutineContext) + job,
+                CoroutineStart.ATOMIC
+            ) {
                 require(isActive)
                 expect(2)
                 throw thrownException
@@ -300,7 +304,10 @@ class CancellableContinuationExceptionHandlingTest : TestBase() {
 
         expect(1)
         try {
-            withContext(wrapperDispatcher(coroutineContext), CoroutineStart.ATOMIC) {
+            withContext(
+                wrapperDispatcher(coroutineContext),
+                CoroutineStart.ATOMIC
+            ) {
                 require(isActive)
                 expect(2)
                 throw thrownException
@@ -324,7 +331,10 @@ class CancellableContinuationExceptionHandlingTest : TestBase() {
         val job = Job()
         job.cancel(cancellationCause)
         try {
-            withContext(wrapperDispatcher(coroutineContext) + job, CoroutineStart.ATOMIC) {
+            withContext(
+                wrapperDispatcher(coroutineContext) + job,
+                CoroutineStart.ATOMIC
+            ) {
                 require(isActive)
                 expect(2)
             }
@@ -337,10 +347,4 @@ class CancellableContinuationExceptionHandlingTest : TestBase() {
 
         fail()
     }
-}
-
-// Workaround to run tests on JDK 8, this test is excluded from jdk16Test task
-fun Throwable.suppressed(): Array<Throwable> {
-    val method = this::class.java.getMethod("getSuppressed") ?: error("This test can only be run using JDK 1.8")
-    return method.invoke(this) as Array<Throwable>
 }

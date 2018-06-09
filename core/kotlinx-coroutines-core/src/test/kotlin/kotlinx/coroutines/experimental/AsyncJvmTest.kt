@@ -16,10 +16,12 @@
 
 package kotlinx.coroutines.experimental
 
+import java.io.*
 import kotlin.coroutines.experimental.*
 import kotlin.test.*
 
 class AsyncJvmTest : TestBase() {
+
     // This must be a common test but it fails on JS because of KT-21961
     @Test
     fun testAsyncWithFinally() = runTest {
@@ -40,20 +42,21 @@ class AsyncJvmTest : TestBase() {
         expect(2)
         yield() // to async
         expect(4)
-        check(d.isActive && !d.isCompleted && !d.isCompletedExceptionally && !d.isCancelled)
-        check(d.cancel())
-        check(!d.isActive && !d.isCompleted && !d.isCompletedExceptionally && d.isCancelled)
-        check(!d.cancel()) // second attempt returns false
-        check(!d.isActive && !d.isCompleted && !d.isCompletedExceptionally && d.isCancelled)
+        check(d.isActive && !d.isCompleted && !d.isCompletedExceptionally)
+        assertTrue(d.cancel())
+        check(!d.isActive && !d.isCompleted && !d.isCompletedExceptionally)
+        assertTrue(d.cancel()) // second attempt returns true as well
+        check(!d.isActive && !d.isCompleted && !d.isCompletedExceptionally)
         expect(5)
         try {
             d.await() // awaits
             expectUnreached() // does not complete normally
         } catch (e: Throwable) {
             expect(7)
+            assertFalse(d.cancel())
             check(e is CancellationException)
         }
-        check(!d.isActive && d.isCompleted && d.isCompletedExceptionally && d.isCancelled)
+        check(!d.isActive && d.isCompleted && d.isCompletedExceptionally)
         finish(8)
     }
 }
