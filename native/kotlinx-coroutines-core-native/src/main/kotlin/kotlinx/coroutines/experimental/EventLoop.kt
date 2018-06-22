@@ -17,8 +17,10 @@
 package kotlinx.coroutines.experimental
 
 import kotlinx.atomicfu.*
+import kotlinx.cinterop.*
 import kotlinx.coroutines.experimental.internal.*
 import kotlinx.coroutines.experimental.timeunit.*
+import platform.posix.*
 import kotlin.coroutines.experimental.*
 
 /**
@@ -316,6 +318,13 @@ internal class BlockingEventLoop : EventLoopBase() {
     public override var isCompleted: Boolean = false
 }
 
-private fun nanoTime(): Long = TODO()
+private fun nanoTime(): Long {
+
+    val stat = nativeHeap.alloc<timespec>()
+    if (clock_gettime(_CLOCK_MONOTONIC, stat.ptr) == -1) {
+        throw IllegalStateException("Error: ${__error()}")
+    }
+    return stat.tv_sec * 1000 * 1000 * 1000 + stat.tv_nsec
+}
 
 private fun unpark(): Unit { /* does nothing */ }

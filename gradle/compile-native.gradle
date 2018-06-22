@@ -25,13 +25,13 @@ konanArtifacts {
             srcFiles project.fileTree('src/main/kotlin')
 
             commonSourceSets 'test', 'main'
-            libraries {
-                artifact libraryName
-            }
+//            libraries {
+//                artifact libraryName
+//            }
             extraOpts '-tr', '--disable', 'devirtualization'
 
             dependencies {
-                "artifact$libraryName" "org.jetbrains.kotlinx:atomicfu-native:$atomicFU_version"
+                "artifact$testProgramName" "org.jetbrains.kotlinx:atomicfu-native:$atomicFU_version"
             }
         }
     }

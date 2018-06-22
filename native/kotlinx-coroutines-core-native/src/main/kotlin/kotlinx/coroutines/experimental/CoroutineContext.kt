@@ -19,10 +19,10 @@ package kotlinx.coroutines.experimental
 import kotlin.coroutines.experimental.*
 import kotlinx.coroutines.experimental.timeunit.*
 
-internal var currentEventLoop: BlockingEventLoop? = null
+internal val currentEventLoop = ArrayList<BlockingEventLoop>()
 
 private fun takeEventLoop(): BlockingEventLoop =
-    currentEventLoop ?: error("There is no event loop. Use runBlocking { ... } to start one.")
+    currentEventLoop.firstOrNull() ?: error("There is no event loop. Use runBlocking { ... } to start one.")
 
 internal object DefaultExecutor : CoroutineDispatcher(), Delay {
     override fun dispatch(context: CoroutineContext, block: Runnable) =
