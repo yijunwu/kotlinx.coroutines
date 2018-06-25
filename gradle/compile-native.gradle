@@ -25,9 +25,6 @@ konanArtifacts {
             srcFiles project.fileTree('src/main/kotlin')
 
             commonSourceSets 'test', 'main'
-//            libraries {
-//                artifact libraryName
-//            }
             extraOpts '-tr', '--disable', 'devirtualization'
 
             dependencies {

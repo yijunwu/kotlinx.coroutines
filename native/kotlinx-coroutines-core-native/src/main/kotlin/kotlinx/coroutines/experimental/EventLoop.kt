@@ -22,6 +22,7 @@ import kotlinx.coroutines.experimental.internal.*
 import kotlinx.coroutines.experimental.timeunit.*
 import platform.posix.*
 import kotlin.coroutines.experimental.*
+import kotlin.system.*
 
 /**
  * Implemented by [CoroutineDispatcher] implementations that have event loop inside and can
@@ -319,12 +320,7 @@ internal class BlockingEventLoop : EventLoopBase() {
 }
 
 private fun nanoTime(): Long {
-
-    val stat = nativeHeap.alloc<timespec>()
-    if (clock_gettime(_CLOCK_MONOTONIC, stat.ptr) == -1) {
-        throw IllegalStateException("Error: ${__error()}")
-    }
-    return stat.tv_sec * 1000 * 1000 * 1000 + stat.tv_nsec
+    return getTimeNanos()
 }
 
 private fun unpark(): Unit { /* does nothing */ }

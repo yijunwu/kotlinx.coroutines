@@ -94,7 +94,7 @@ class ProduceTest : TestBase() {
 //        } catch (e: TestException) {
 //            expect(5)
 //        }
-    }
+//    }
 
     private class TestException : Exception()
 }
