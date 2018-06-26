@@ -99,7 +99,7 @@ class MutexTest : TestBase() {
 
         // owner firstOwner
         mutex.lock(firstOwner)
-        val secondLockJob = launch {
+        val secondLockJob = launch(coroutineContext) {
             mutex.lock(secondOwner)
         }
 

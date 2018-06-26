@@ -17,6 +17,7 @@
 package kotlinx.coroutines.experimental.channels
 
 import kotlinx.coroutines.experimental.*
+import kotlin.coroutines.experimental.*
 import kotlin.math.*
 import kotlin.test.*
 
@@ -144,7 +145,7 @@ class ChannelsTest: TestBase() {
 
     @Test
     fun testMapToSendChannel() = runTest {
-        val c = produce<Int> {
+        val c = produce<Int>(coroutineContext) {
             testList.asReceiveChannel().mapTo(channel) { it + 10 }
         }
         assertEquals(testList.map { it + 10 }, c.toList())
@@ -339,7 +340,7 @@ class ChannelsTest: TestBase() {
     @Test
     fun testFilterToSendChannel() = runTest {
         repeat(3) { mod ->
-            val c = produce<Int> {
+            val c = produce<Int>(coroutineContext) {
                 testList.asReceiveChannel().filterTo(channel) { it % 2 == mod }
             }
             assertEquals(testList.filter { it % 2 == mod }, c.toList())
@@ -366,7 +367,7 @@ class ChannelsTest: TestBase() {
     @Test
     fun testFilterNotToSendChannel() = runTest {
         repeat(3) { mod ->
-            val c = produce<Int> {
+            val c = produce<Int>(coroutineContext) {
                 testList.asReceiveChannel().filterNotTo(channel) { it % 2 == mod }
             }
             assertEquals(testList.filterNot { it % 2 == mod }, c.toList())
@@ -393,7 +394,7 @@ class ChannelsTest: TestBase() {
     @Test
     fun testFilterNotNullToSendChannel() = runTest {
         repeat(3) { mod ->
-            val c = produce<Int> {
+            val c = produce<Int>(coroutineContext) {
                 testList.asReceiveChannel().map { it.takeIf { it % 2 == mod } }.filterNotNullTo(channel)
             }
             assertEquals(testList.map { it.takeIf { it % 2 == mod } }.filterNotNull(), c.toList())
@@ -420,7 +421,7 @@ class ChannelsTest: TestBase() {
     @Test
     fun testFilterIndexedToChannel() = runTest {
         repeat(3) { mod ->
-            val c = produce<Int> {
+            val c = produce<Int>(coroutineContext) {
                 testList.asReceiveChannel().filterIndexedTo(channel) { index, _ -> index % 2 == mod }
             }
             assertEquals(testList.filterIndexed { index, _ ->  index % 2 == mod }, c.toList())
@@ -437,7 +438,7 @@ class ChannelsTest: TestBase() {
 
     @Test
     fun testToChannel() = runTest {
-        val c = produce<Int> {
+        val c = produce<Int>(coroutineContext) {
             testList.asReceiveChannel().toChannel(channel)
         }
         assertEquals(testList, c.toList())
@@ -458,7 +459,7 @@ class ChannelsTest: TestBase() {
 
     @Test
     fun testMapIndexedToSendChannel() = runTest {
-        val c = produce<Int> {
+        val c = produce<Int>(coroutineContext) {
             testList.asReceiveChannel().mapIndexedTo(channel) { index, i -> index + i }
         }
         assertEquals(testList.mapIndexed { index, i -> index + i }, c.toList())
@@ -484,7 +485,7 @@ class ChannelsTest: TestBase() {
     @Test
     fun testMapNotNullToSendChannel() = runTest {
         repeat(3) { mod ->
-            val c = produce<Int> {
+            val c = produce<Int>(coroutineContext) {
                 testList.asReceiveChannel().mapNotNullTo(channel) { i -> i.takeIf { i % 2 == mod } }
             }
             assertEquals(testList.mapNotNull { i -> i.takeIf { i % 2 == mod } }, c.toList())
@@ -511,7 +512,7 @@ class ChannelsTest: TestBase() {
     @Test
     fun testMapIndexedNotNullToSendChannel() = runTest {
         repeat(3) { mod ->
-            val c = produce<Int> {
+            val c = produce<Int>(coroutineContext) {
                 testList.asReceiveChannel().mapIndexedNotNullTo(channel) { index, i -> index.takeIf { i % 2 == mod } }
             }
             assertEquals(testList.mapIndexedNotNull { index, i -> index.takeIf { i % 2 == mod } }, c.toList())
