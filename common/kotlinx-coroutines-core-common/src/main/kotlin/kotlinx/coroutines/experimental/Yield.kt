@@ -32,6 +32,7 @@ public suspend fun yield(): Unit = suspendCoroutineOrReturn sc@ { cont ->
     context.checkCompletion()
     if (cont !is DispatchedContinuation<Unit>) return@sc Unit
     if (!cont.dispatcher.isDispatchNeeded(context)) return@sc Unit
+    println("Dispatch yield $cont")
     cont.dispatchYield(Unit)
     COROUTINE_SUSPENDED
 }

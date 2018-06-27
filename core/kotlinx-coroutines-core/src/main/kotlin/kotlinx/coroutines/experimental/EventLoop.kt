@@ -152,10 +152,13 @@ internal abstract class EventLoopBase: CoroutineDispatcher(), Delay, EventLoop {
     @Suppress("MemberVisibilityCanBePrivate") // todo: remove suppress when KT-22030 is fixed
     internal fun execute(task: Runnable) {
         if (enqueueImpl(task)) {
+            println("Unparking")
             // todo: we should unpark only when this delayed task became first in the queue
             unpark()
-        } else
+        } else {
+            println("Executing")
             DefaultExecutor.execute(task)
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -227,11 +230,15 @@ internal abstract class EventLoopBase: CoroutineDispatcher(), Delay, EventLoop {
     }
 
     internal fun schedule(delayedTask: DelayedTask) {
+        println("Scheduling $this")
         if (scheduleImpl(delayedTask)) {
+            println("Unparking")
             // todo: we should unpark only when this delayed task became first in the queue
             unpark()
-        } else
+        } else {
             DefaultExecutor.schedule(delayedTask)
+            println("Scheduling")
+        }
     }
 
     private fun scheduleImpl(delayedTask: DelayedTask): Boolean {

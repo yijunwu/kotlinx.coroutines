@@ -158,8 +158,10 @@ public interface DispatchedTask<in T> : Runnable {
                     val exception = getExceptionalResult(state)
                     if (exception != null)
                         continuation.resumeWithException(exception)
-                    else
+                    else {
+                        println("Resuming $continuation")
                         continuation.resume(getSuccessfulResult(state))
+                    }
                 }
             }
         } catch (e: Throwable) {
