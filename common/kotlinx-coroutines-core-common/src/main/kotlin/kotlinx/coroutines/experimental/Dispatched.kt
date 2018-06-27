@@ -159,7 +159,6 @@ public interface DispatchedTask<in T> : Runnable {
                     if (exception != null)
                         continuation.resumeWithException(exception)
                     else {
-                        println("Resuming $continuation")
                         continuation.resume(getSuccessfulResult(state))
                     }
                 }
