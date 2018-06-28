@@ -1,4 +1,5 @@
 rootProject.name = 'kotlinx.coroutines'
+enableFeaturePreview('GRADLE_METADATA')
 
 def module(String path) {
     int i = path.lastIndexOf('/')

@@ -4,13 +4,14 @@ repositories {
     jcenter()
     mavenCentral()
     maven { url "https://kotlin.bintray.com/kotlinx" }
+    maven { url "https://dl.bintray.com/qwwdfsad/kotlinx/" }
 }
 
 def libraryName = project.name
 def testProgramName = libraryName + "-test"
 
 konanArtifacts {
-    library(libraryName, targets: ["macos_x64"]) {
+    library(libraryName, targets: ["macos_x64", "ios_x64", "ios_arm64"]) {
         artifactName libraryName.replace('-', '_')
         enableMultiplatform true
         dependencies {
@@ -25,7 +26,7 @@ konanArtifacts {
             srcFiles project.fileTree('src/main/kotlin')
 
             commonSourceSets 'test', 'main'
-            extraOpts '-tr', '--disable', 'devirtualization'
+            extraOpts '-tr'
 
             dependencies {
                 "artifact$testProgramName" "org.jetbrains.kotlinx:atomicfu-native:$atomicFU_version"

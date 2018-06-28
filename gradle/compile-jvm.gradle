@@ -21,6 +21,7 @@ repositories {
     jcenter()
     maven { url "https://kotlin.bintray.com/kotlinx" }
     maven { url "https://dl.bintray.com/devexperts/Maven/" }
+    maven { url "https://dl.bintray.com/qwwdfsad/kotlinx/" }
 }
 
 tasks.withType(Test) {

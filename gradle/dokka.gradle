@@ -62,15 +62,15 @@ if (platform == "jvm") {
     }
 
     // real xxx-javadoc.jar for JVM
-    task dokkaJavadoc(type: dokka.getClass()) {
-        outputFormat = 'javadoc'
-        outputDirectory = "$buildDir/javadoc"
-    }
+//    task dokkaJavadoc(type: dokka.getClass()) {
+//        outputFormat = 'javadoc'
+//        outputDirectory = "$buildDir/javadoc"
+//    }
 
-    task javadocJar(type: Jar, dependsOn: dokkaJavadoc) {
-        classifier = 'javadoc'
-        from "$buildDir/javadoc"
-    }
+//    task javadocJar(type: Jar, dependsOn: dokkaJavadoc) {
+//        classifier = 'javadoc'
+//        from "$buildDir/javadoc"
+//    }
 } else {
     // empty xxx-javadoc.jar for JS and Common modules
     task javadocJar(type: Jar) {

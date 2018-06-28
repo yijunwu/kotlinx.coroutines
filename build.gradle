@@ -13,6 +13,7 @@ buildscript {
         maven { url "https://kotlin.bintray.com/kotlin-dev" }
         maven { url "https://jetbrains.bintray.com/kotlin-native-dependencies" }
         maven { url "https://plugins.gradle.org/m2/" }
+        maven { url "https://dl.bintray.com/qwwdfsad/kotlinx/" }
     }
     configurations.classpath {
         resolutionStrategy {
@@ -37,10 +38,9 @@ buildscript {
 }
 
 allprojects {
-    project.gradle.services.get(org.gradle.api.internal.FeaturePreviews.class).enableFeature(org.gradle.api.internal.FeaturePreviews.Feature.GRADLE_METADATA)
-
     repositories {
         mavenLocal()
+        maven { url "https://dl.bintray.com/qwwdfsad/kotlinx/" }
     }
 
     def deployVersion = properties['DeployVersion']
@@ -123,7 +123,7 @@ configure(subprojects.findAll { !internal.contains(it.name) && it.name != 'kotli
 // --------------- Configure sub-projects that are published ---------------
 
 // todo: native is not published yet
-def unpublished = internal + ['kotlinx-coroutines-rx-example', 'example-frontend-js', 'kotlinx-coroutines-core-native']
+def unpublished = internal + ['kotlinx-coroutines-rx-example', 'example-frontend-js']
 
 def core_docs_url = "https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/"
 def core_docs_file = "$projectDir/core/kotlinx-coroutines-core/build/dokka/kotlinx-coroutines-core/package-list"
@@ -149,7 +149,7 @@ configure(subprojects.findAll { !unpublished.contains(it.name) }) {
     }
     
     if (platform == "jvm") {
-        dokkaJavadoc.dependsOn project(":$coroutines_core").dokka
+//        dokkaJavadoc.dependsOn project(":$coroutines_core").dokka
 
         tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
             kotlinOptions.freeCompilerArgs += ["-Xdump-declarations-to=${buildDir}/visibilities.json"]
