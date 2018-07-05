@@ -107,7 +107,7 @@ configure(subprojects.findAll { !sourceless.contains(it.name)  }) {
 def internal = sourceless + ['benchmarks', 'knit', 'js-stub', 'binary-compatibility-validator']
 
 // Reconfigure source sets to avoid long "src/main/kotlin/fqn"
-configure(subprojects.findAll { !it.name.contains(sourceless) && it.name != "benchmarks" }) {
+configure(subprojects.findAll { !it.name.contains(sourceless) && it.name != "benchmarks" && !it.name.endsWith("-native") }) {
     sourceSets {
         main.kotlin.srcDirs = ['src']
         test.kotlin.srcDirs = ['test']
@@ -115,7 +115,7 @@ configure(subprojects.findAll { !it.name.contains(sourceless) && it.name != "ben
     }
 }
 
-// configure atomicfu
+// configure atomicfuArrayBroadcastChannelTest
 configure(subprojects.findAll { !internal.contains(it.name) }) {
     def platform = platformOf(it)
     apply from: rootProject.file("gradle/atomicfu-${platform}.gradle")

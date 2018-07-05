@@ -17,6 +17,7 @@ def testProgramName = libraryName + "-test"
 konanArtifacts {
     library(libraryName, targets: ["macos_x64", "ios_x64", "ios_arm64"]) {
         artifactName libraryName.replace('-', '_')
+        srcDir 'src'
         enableMultiplatform true
         dependencies {
             "artifact$libraryName" "org.jetbrains.kotlinx:atomicfu-native:$atomicFU_version"
@@ -26,8 +27,8 @@ konanArtifacts {
     // TODO: THIS IS A WORKAROUND: Cannot do tests together with publishing in Kotlin/Native
     if (!rootProject.properties["publish"]) {
         program(testProgramName, targets: ["macos_x64"]) {
-            srcDir 'src/test/kotlin'
-            srcFiles project.fileTree('src/main/kotlin')
+            srcDir 'test'
+            srcFiles project.fileTree('src')
 
             commonSourceSets 'test', 'main'
             extraOpts '-tr'
