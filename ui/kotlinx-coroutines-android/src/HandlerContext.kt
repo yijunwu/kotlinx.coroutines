@@ -4,12 +4,11 @@
 
 package kotlinx.coroutines.experimental.android
 
-import android.os.Handler
-import android.os.Looper
-import android.view.Choreographer
+import android.os.*
+import android.view.*
 import kotlinx.coroutines.experimental.*
-import java.util.concurrent.TimeUnit
-import kotlin.coroutines.experimental.CoroutineContext
+import java.util.concurrent.*
+import kotlin.coroutines.experimental.*
 
 /**
  * Dispatches execution onto Android main UI thread and provides native [delay][Delay.delay] support.
@@ -32,8 +31,25 @@ public class HandlerContext(
     private val handler: Handler,
     private val name: String? = null
 ) : CoroutineDispatcher(), Delay {
+
+    /**
+     * Dispatcher which executes given block immediately if [isDispatchNeeded] is already in the right handler context
+     * (current looper is the same as [handler] looper). If not, block is dispatched regularly via [handler]
+     */
+    public val immediate: HandlerContext  by lazy { HandlerContext(handler, name, true) }
+
+    private var invokeImmediately: Boolean = false
+
+    private constructor(handler: Handler, name: String?, invokeImmediately: Boolean) : this(handler, name) {
+        this.invokeImmediately = invokeImmediately
+    }
+
     @Volatile
     private var _choreographer: Choreographer? = null
+
+    override fun isDispatchNeeded(context: CoroutineContext): Boolean {
+        return !invokeImmediately || Looper.myLooper() != handler.looper
+    }
 
     override fun dispatch(context: CoroutineContext, block: Runnable) {
         handler.post(block)
@@ -68,7 +84,7 @@ public class HandlerContext(
         // post into looper thread thread to figure it out
         return suspendCancellableCoroutine { cont ->
            handler.post {
-               updateChoreographerAndPostFrameCallback(cont)
+                updateChoreographerAndPostFrameCallback(cont)
            }
         }
     }
