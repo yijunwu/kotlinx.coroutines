@@ -24,25 +24,33 @@ private const val MAX_DELAY = Long.MAX_VALUE / 2 // cannot delay for too long on
 
 /**
  * Implements [CoroutineDispatcher] on top of an arbitrary Android [Handler].
- * @param handler a handler.
- * @param name an optional name for debugging.
  */
-public class HandlerContext(
+public class HandlerContext private constructor(
     private val handler: Handler,
-    private val name: String? = null
+    private val name: String?,
+    private val invokeImmediately: Boolean
 ) : CoroutineDispatcher(), Delay {
+    /**
+     * Creates [CoroutineDispatcher] for the given Android [handler].
+     *
+     * @param handler a handler.
+     * @param name an optional name for debugging.
+     */
+    public constructor(
+        handler: Handler,
+        name: String? = null
+    ) : this(handler, name, false)
+
+    @Volatile
+    private var _immediate: HandlerContext? = if (invokeImmediately) this else null
 
     /**
-     * Dispatcher which executes given block immediately if [isDispatchNeeded] is already in the right handler context
-     * (current looper is the same as [handler] looper). If not, block is dispatched regularly via [handler]
+     * Returns dispatcher that executes coroutines immediately when it is already in the right handler context
+     * (current looper is the same as [handler] looper). See [isDispatchNeeded] documentation on
+     * why this should not be done by default.
      */
-    public val immediate: HandlerContext  by lazy { HandlerContext(handler, name, true) }
-
-    private var invokeImmediately: Boolean = false
-
-    private constructor(handler: Handler, name: String?, invokeImmediately: Boolean) : this(handler, name) {
-        this.invokeImmediately = invokeImmediately
-    }
+    public val immediate: HandlerContext = _immediate ?:
+        HandlerContext(handler, name, true).also { _immediate = it }
 
     @Volatile
     private var _choreographer: Choreographer? = null
