@@ -215,7 +215,6 @@ internal abstract class EventLoopBase: CoroutineDispatcher(), Delay, EventLoop {
     }
 
     internal fun schedule(delayedTask: DelayedTask) {
-        println("Scheduling $this")
         if (scheduleImpl(delayedTask)) {
             // todo: we should unpark only when this delayed task became first in the queue
             unpark()
