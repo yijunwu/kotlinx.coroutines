@@ -37,6 +37,7 @@ public fun handleCoroutineException(context: CoroutineContext, exception: Throwa
         // simply rethrow if handler threw the original exception
         if (handlerException === exception) throw exception
         // handler itself crashed for some other reason -- that is bad -- keep both
+
         throw RuntimeException("Exception while trying to handle coroutine exception", exception).apply {
             addSuppressedThrowable(handlerException)
         }

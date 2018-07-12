@@ -2,35 +2,25 @@
  * Copyright 2016-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
-apply plugin: 'konan'
+apply plugin: "kotlin-platform-native"
 
-def libraryName = project.name
-def testProgramName = libraryName + "-test"
+repositories {
+    jcenter()
+    mavenCentral()
+    maven { url "https://kotlin.bintray.com/kotlinx" }
+    maven { url "https://dl.bintray.com/qwwdfsad/kotlinx/" }
+}
 
-konanArtifacts {
-    library(libraryName, targets: ["ios_arm64", "ios_x64", "macos_x64"]) {
-        artifactName libraryName.replace('-', '_')
-        enableMultiplatform true
-        dependencies {
-            "artifact$libraryName" "org.jetbrains.kotlinx:atomicfu-native:$atomicFU_version"
-        }
-    }
-    // TODO: THIS IS A WORKAROUND: Cannot do tests together with publishing in Kotlin/Native
-    if (!rootProject.properties["publish"]) {
-        program(testProgramName, targets: ["macos_x64"]) {
-            srcDir 'src/test/kotlin'
-            commonSourceSet 'test'
-            libraries {
-                artifact libraryName
-            }
-            extraOpts '-tr'
+sourceSets {
+    main {
+        component {
+            target "host"// "macos_x64", "ios_x64", "ios_arm64", "linux_x64"
+            outputKinds = [KLIBRARY]
         }
     }
 }
 
-task test(dependsOn: run)
-
-// TODO: THIS IS A WORKAROUND: Cannot do tests together with publishing in Kotlin/Native
-if (rootProject.properties["publish"]) {
-    publishToMavenLocal.dependsOn(build)
+dependencies {
+    expectedBy project(':kotlinx-coroutines-core-common')
 }
+

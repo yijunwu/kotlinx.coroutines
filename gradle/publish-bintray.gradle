@@ -37,9 +37,14 @@ def pomConfig = {
 
 // ------------- tasks
 
+def isNative = project.name.endsWith("native")
+
 task sourcesJar(type: Jar) {
     classifier = 'sources'
-    from sourceSets.main.allSource
+    if (!isNative) {
+        from sourceSets.main.allSource
+    }
+
     if (project.name == coroutines_core && platform != "common") {
         // add common source, too
         from rootProject.file("common/$project.name-common/src/main/kotlin")
@@ -47,9 +52,15 @@ task sourcesJar(type: Jar) {
 }
 
 publishing {
+    repositories {
+        maven { url = 'https://kotlin.bintray.com/kotlinx' }
+    }
+
     publications {
         maven(MavenPublication) {
-            from components.java
+            if (!isNative) {
+                from components.java
+            }
             artifact javadocJar
             artifact sourcesJar
             pom.withXml {
@@ -74,11 +85,16 @@ bintray {
         version {
             name = project.version
             vcsTag = project.version
-            released  = new Date()
+            released = new Date()
         }
     }
 }
 
-bintrayUpload.doLast {
-    println("Uploaded $project.name version $project.version")
+// TODO :kludge this is required for K/N publishing
+bintrayUpload.dependsOn publishToMavenLocal
+bintrayUpload.doFirst {
+    publications = project.publishing.publications.findAll { !it.name.contains('-test') }.collect {
+        println("Uploading artifact '$it.groupId:$it.artifactId:$it.version' from publication '$it.name'")
+        it
+    }
 }

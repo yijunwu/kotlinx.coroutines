@@ -22,6 +22,7 @@ dependencies {
 
 repositories {
     maven { url "https://dl.bintray.com/devexperts/Maven/" }
+    maven { url "https://dl.bintray.com/qwwdfsad/kotlinx/" }
 }
 
 tasks.withType(Test) {
