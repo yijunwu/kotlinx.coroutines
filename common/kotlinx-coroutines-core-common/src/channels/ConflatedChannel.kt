@@ -2,10 +2,10 @@
  * Copyright 2016-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
-package kotlinx.coroutines.experimental.channels
+package kotlinx.coroutines.channels
 
-import kotlinx.coroutines.experimental.selects.ALREADY_SELECTED
-import kotlinx.coroutines.experimental.selects.SelectInstance
+import kotlinx.coroutines.selects.ALREADY_SELECTED
+import kotlinx.coroutines.selects.SelectInstance
 
 /**
  * Channel that buffers at most one element and conflates all subsequent `send` and `offer` invocations,

@@ -4,11 +4,11 @@
 @file:JvmMultifileClass
 @file:JvmName("ChannelsKt")
 
-package kotlinx.coroutines.experimental.channels
+package kotlinx.coroutines.channels
 
-import kotlinx.coroutines.experimental.*
-import kotlinx.coroutines.experimental.internalAnnotations.*
-import kotlin.coroutines.experimental.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.internalAnnotations.*
+import kotlin.coroutines.*
 
 internal const val DEFAULT_CLOSE_MESSAGE = "Channel was closed"
 

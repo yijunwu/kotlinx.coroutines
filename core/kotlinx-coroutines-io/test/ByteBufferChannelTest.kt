@@ -2,14 +2,14 @@
  * Copyright 2016-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
-package kotlinx.coroutines.experimental.io
+package kotlinx.coroutines.io
 
-import kotlinx.coroutines.experimental.*
-import kotlinx.coroutines.experimental.CancellationException
-import kotlinx.coroutines.experimental.channels.*
-import kotlinx.coroutines.experimental.io.internal.*
-import kotlinx.coroutines.experimental.io.packet.*
-import kotlinx.coroutines.experimental.io.packet.ByteReadPacket
+import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.io.internal.*
+import kotlinx.coroutines.io.packet.*
+import kotlinx.coroutines.io.packet.ByteReadPacket
 import kotlinx.io.core.*
 import kotlinx.io.pool.*
 import org.junit.*
@@ -19,7 +19,7 @@ import java.nio.CharBuffer
 import java.util.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.*
-import kotlin.coroutines.experimental.*
+import kotlin.coroutines.*
 import kotlin.test.*
 
 class ByteBufferChannelTest : TestBase() {

@@ -2,9 +2,9 @@
  * Copyright 2016-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
-package kotlinx.coroutines.experimental.channels
+package kotlinx.coroutines.channels
 
-import kotlinx.coroutines.experimental.selects.SelectClause1
+import kotlinx.coroutines.selects.SelectClause1
 
 enum class TestChannelKind {
     RENDEZVOUS {

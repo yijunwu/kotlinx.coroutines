@@ -2,9 +2,9 @@
  * Copyright 2016-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
-package kotlinx.coroutines.experimental.guide.test
+package kotlinx.coroutines.guide.test
 
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import java.io.ByteArrayInputStream

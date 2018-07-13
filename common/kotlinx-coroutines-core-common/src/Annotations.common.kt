@@ -4,7 +4,7 @@
 
 // NOTE: We are defining them in a special internalAnnotations package because they would break
 // user code that uses kotlinx.coroutines library otherwise, see https://youtrack.jetbrains.com/issue/KT-23727
-package kotlinx.coroutines.experimental.internalAnnotations
+package kotlinx.coroutines.internalAnnotations
 
 @Target(AnnotationTarget.FILE, AnnotationTarget.FUNCTION)
 internal expect annotation class JvmName(val name: String)

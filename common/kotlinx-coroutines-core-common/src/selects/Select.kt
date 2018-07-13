@@ -2,17 +2,17 @@
  * Copyright 2016-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
-package kotlinx.coroutines.experimental.selects
+package kotlinx.coroutines.selects
 
 import kotlinx.atomicfu.*
-import kotlinx.coroutines.experimental.*
-import kotlinx.coroutines.experimental.channels.*
-import kotlinx.coroutines.experimental.internal.*
-import kotlinx.coroutines.experimental.internalAnnotations.*
-import kotlinx.coroutines.experimental.intrinsics.*
-import kotlinx.coroutines.experimental.timeunit.*
-import kotlin.coroutines.experimental.*
-import kotlin.coroutines.experimental.intrinsics.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.internal.*
+import kotlinx.coroutines.internalAnnotations.*
+import kotlinx.coroutines.intrinsics.*
+import kotlinx.coroutines.timeunit.*
+import kotlin.coroutines.*
+import kotlin.coroutines.intrinsics.*
 
 /**
  * Scope for [select] invocation.
@@ -236,22 +236,15 @@ internal class SelectBuilderImpl<in R>(
     }
 
     // Resumes in MODE_DIRECT
-    override fun resume(value: R) {
-        doResume({ value }) {
-            uCont.resume(value)
-        }
-    }
-
-    // Resumes in MODE_DIRECT
-    override fun resumeWithException(exception: Throwable) {
-        doResume({ Fail(exception) }) {
-            uCont.resumeWithException(exception)
+    override fun resumeWith(result: SuccessOrFailure<R>) {
+        doResume({ result.toState() }) {
+            uCont.resumeWith(result)
         }
     }
 
     // Resumes in MODE_CANCELLABLE
     override fun resumeSelectCancellableWithException(exception: Throwable) {
-        doResume({ Fail(exception) }) {
+        doResume({ CompletedExceptionally(exception) }) {
             uCont.intercepted().resumeCancellableWithException(exception)
         }
     }
@@ -266,7 +259,7 @@ internal class SelectBuilderImpl<in R>(
         }
         when {
             result === RESUMED -> throw IllegalStateException("Already resumed")
-            result is Fail -> throw result.exception
+            result is CompletedExceptionally -> throw result.cause
             else -> return result // either COROUTINE_SUSPENDED or data
         }
     }
@@ -423,8 +416,4 @@ internal class SelectBuilderImpl<in R>(
     private class DisposeNode(
         @JvmField val handle: DisposableHandle
     ) : LockFreeLinkedListNode()
-
-    private class Fail(
-        @JvmField val exception: Throwable
-    )
 }

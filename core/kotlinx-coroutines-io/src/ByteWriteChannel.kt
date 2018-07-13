@@ -2,10 +2,10 @@
  * Copyright 2016-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
-package kotlinx.coroutines.experimental.io
+package kotlinx.coroutines.io
 
-import kotlinx.coroutines.experimental.io.packet.*
-import kotlinx.coroutines.experimental.io.packet.ByteReadPacket
+import kotlinx.coroutines.io.packet.*
+import kotlinx.coroutines.io.packet.ByteReadPacket
 import kotlinx.io.core.*
 import java.nio.CharBuffer
 import java.util.concurrent.CancellationException

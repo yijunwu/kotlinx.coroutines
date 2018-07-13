@@ -2,9 +2,9 @@
  * Copyright 2016-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
-package kotlinx.coroutines.experimental.io.jvm.nio
+package kotlinx.coroutines.io.jvm.nio
 
-import kotlinx.coroutines.experimental.io.*
+import kotlinx.coroutines.io.*
 import java.nio.channels.*
 
 /**

@@ -2,14 +2,14 @@
  * Copyright 2016-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
-package kotlinx.coroutines.experimental.io
+package kotlinx.coroutines.io
 
-import kotlinx.coroutines.experimental.*
-import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import org.junit.After
 import org.junit.Test
 import java.io.IOException
-import kotlin.coroutines.experimental.coroutineContext
+import kotlin.coroutines.coroutineContext
 
 class ByteChannelCloseTest : TestBase() {
 

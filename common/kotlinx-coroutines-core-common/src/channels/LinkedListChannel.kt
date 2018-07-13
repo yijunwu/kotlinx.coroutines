@@ -2,10 +2,10 @@
  * Copyright 2016-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
-package kotlinx.coroutines.experimental.channels
+package kotlinx.coroutines.channels
 
-import kotlinx.coroutines.experimental.selects.ALREADY_SELECTED
-import kotlinx.coroutines.experimental.selects.SelectInstance
+import kotlinx.coroutines.selects.ALREADY_SELECTED
+import kotlinx.coroutines.selects.SelectInstance
 
 /**
  * Channel with linked-list buffer of a unlimited capacity (limited only by available memory).

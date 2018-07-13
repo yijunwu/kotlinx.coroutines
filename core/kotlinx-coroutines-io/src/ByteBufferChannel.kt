@@ -4,21 +4,21 @@
 
 @file:Suppress("UsePropertyAccessSyntax") // for ByteBuffer.getShort/getInt/etc
 
-package kotlinx.coroutines.experimental.io
+package kotlinx.coroutines.io
 
 import kotlinx.atomicfu.*
-import kotlinx.coroutines.experimental.*
-import kotlinx.coroutines.experimental.channels.*
-import kotlinx.coroutines.experimental.io.internal.*
-import kotlinx.coroutines.experimental.io.packet.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.io.internal.*
+import kotlinx.coroutines.io.packet.*
 import kotlinx.io.core.*
 import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.pool.*
 import java.io.EOFException
 import java.nio.*
 import java.util.concurrent.atomic.*
-import kotlin.coroutines.experimental.*
-import kotlin.coroutines.experimental.intrinsics.*
+import kotlin.coroutines.*
+import kotlin.coroutines.intrinsics.*
 
 internal const val DEFAULT_CLOSE_MESSAGE = "Byte channel was closed"
 

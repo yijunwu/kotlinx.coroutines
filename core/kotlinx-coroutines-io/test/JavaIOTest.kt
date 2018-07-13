@@ -2,16 +2,16 @@
  * Copyright 2016-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
-package kotlinx.coroutines.experimental.io
+package kotlinx.coroutines.io
 
-import kotlinx.coroutines.experimental.*
-import kotlinx.coroutines.experimental.io.jvm.javaio.*
-import kotlinx.coroutines.experimental.io.jvm.nio.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.io.jvm.javaio.*
+import kotlinx.coroutines.io.jvm.nio.*
 import org.junit.Test
 import java.io.*
 import java.nio.channels.*
 import java.util.*
-import kotlin.coroutines.experimental.*
+import kotlin.coroutines.*
 import kotlin.test.*
 
 class JavaIOTest : TestBase() {

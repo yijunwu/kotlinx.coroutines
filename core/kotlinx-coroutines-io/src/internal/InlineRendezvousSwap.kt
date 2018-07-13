@@ -2,14 +2,14 @@
  * Copyright 2016-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
-package kotlinx.coroutines.experimental.io.internal
+package kotlinx.coroutines.io.internal
 
-import kotlinx.coroutines.experimental.*
-import kotlin.coroutines.experimental.coroutineContext
-import kotlin.coroutines.experimental.intrinsics.*
+import kotlinx.coroutines.*
+import kotlin.coroutines.coroutineContext
+import kotlin.coroutines.intrinsics.*
 
 /**
- * This is completely similar to [kotlinx.coroutines.experimental.channels.RendezvousChannel] except:
+ * This is completely similar to [kotlinx.coroutines.channels.RendezvousChannel] except:
  * - non-cancellable
  * - all functions are inline and always tail-call suspend
  * - no poll/offer

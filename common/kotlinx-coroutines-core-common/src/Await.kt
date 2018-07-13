@@ -2,10 +2,11 @@
  * Copyright 2016-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
-package kotlinx.coroutines.experimental
+package kotlinx.coroutines
 
 import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.experimental.internalAnnotations.Volatile
+import kotlinx.coroutines.internalAnnotations.Volatile
+import kotlin.coroutines.*
 
 /**
  * Awaits for completion of given deferred values without blocking a thread and resumes normally with the list of values
