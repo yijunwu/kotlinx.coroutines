@@ -66,7 +66,7 @@ println("Using Kotlin compiler version: $org.jetbrains.kotlin.config.KotlinCompi
 
 // --------------- Configure sub-projects with Kotlin sources ---------------
 
-def sourceless = ['site']
+def sourceless = []
 
 static def platformOf(project) {
     if (project.name.endsWith("-common")) return "common"
@@ -104,10 +104,10 @@ configure(subprojects.findAll { !sourceless.contains(it.name)  }) {
 
 // --------------- Configure sub-projects that are part of the library ---------------
 
-def internal = sourceless + ['benchmarks', 'knit', 'js-stub', 'binary-compatibility-validator']
+def internal = sourceless + ['benchmarks', 'knit', 'binary-compatibility-validator']
 
 // Reconfigure source sets to avoid long "src/main/kotlin/fqn"
-configure(subprojects.findAll { !it.name.contains(sourceless) && it.name != "benchmarks" }) {
+configure(subprojects.findAll { it.name != "benchmarks" }) {
     def projectName = it.name
     sourceSets {
         main.kotlin.srcDirs = ['src']
@@ -145,7 +145,7 @@ configure(subprojects.findAll { !internal.contains(it.name) && it.name != 'kotli
 // --------------- Configure sub-projects that are published ---------------
 
 // todo: native is not published yet
-def unpublished = internal + ['kotlinx-coroutines-rx-example', 'example-frontend-js']
+def unpublished = internal + ['kotlinx-coroutines-rx-example']
 
 def core_docs_url = "https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/"
 def core_docs_file = "$projectDir/core/kotlinx-coroutines-core/build/dokka/kotlinx-coroutines-core/package-list"

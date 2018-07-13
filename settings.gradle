@@ -16,7 +16,7 @@ def module(String path) {
 
 include('benchmarks')
 include('knit')
-include('site')
+//include('site')
 
 module('binary-compatibility-validator')
 
@@ -40,8 +40,8 @@ module('ui/kotlinx-coroutines-android')
 module('ui/kotlinx-coroutines-javafx')
 module('ui/kotlinx-coroutines-swing')
 
-module('js/kotlinx-coroutines-core-js')
-module('js/js-stub')
-module('js/example-frontend-js')
+//module('js/kotlinx-coroutines-core-js')
+//module('js/js-stub')
+//module('js/example-frontend-js')
 
 module('native/kotlinx-coroutines-core-native')

@@ -30,9 +30,9 @@ if (platform == "jvm") {
 
     if (project.name == coroutines_core) {
         // Custom configuration for MPP modules
-        dependencies {
-            compileOnly project(":js-stub") // so that JS library reference can resolve properly
-        }
+//        dependencies {
+//            compileOnly project(":js-stub") // so that JS library reference can resolve properly
+//        }
         
         dokka {
             kotlinTasks { [] }
@@ -42,22 +42,22 @@ if (platform == "jvm") {
             makeLinkMapping(it, rootProject.file("js/$project.name-js"))
             makeLinkMapping(it, rootProject.file("common/$project.name-common"))
             // source roots
-            impliedPlatforms = ['JVM', 'JS']
+            impliedPlatforms = ['JVM']
             sourceRoot {
                 path = rootProject.file("core/$project.name/src")
                 platforms = ['JVM']
             }
-            sourceRoot {
-                path = rootProject.file("js/$project.name-js/src")
-                platforms = ['JS']
-            }
+//            sourceRoot {
+//                path = rootProject.file("js/$project.name-js/src")
+//                platforms = ['JS']
+//            }
             sourceRoot {
                 path = rootProject.file("common/$project.name-common/src")
             }
             // depends on JS & Common, too
             afterEvaluate {
                 dependsOn(tasks.getByPath(":$project.name:classes"))
-                dependsOn(tasks.getByPath(":$project.name-js:classes"))
+//                dependsOn(tasks.getByPath(":$project.name-js:classes"))
                 dependsOn(tasks.getByPath(":$project.name-common:classes"))
                 dependsOn(project.configurations.compileClasspath)
                 classpath = project.configurations.compileClasspath.files + project.sourceSets.main.output.files
